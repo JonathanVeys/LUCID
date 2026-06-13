@@ -1,0 +1,28 @@
+.header-div {
+    display: flex;
+    position: fixed;
+    top: 0;
+    left: 0;           
+    width: 100%;      
+    box-sizing: border-box; 
+    background-color: transparent;
+    color: dimgray;
+    padding: 15px;
+    gap: 25px;
+    justify-content: right;
+    align-items: center;
+}
+
+
+.btn {
+    background: none;
+    border: none;
+    padding: 0;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+}
+
+.btn:hover {
+    color: darkgray;
+}

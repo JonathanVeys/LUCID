@@ -1,0 +1,9 @@
+.footer-div {
+    display: flex;
+    flex-direction: row;
+    position: fixed;
+    bottom: 0;
+    background-color: transparent;
+    color: dimgray;
+    padding: 10px;
+}
