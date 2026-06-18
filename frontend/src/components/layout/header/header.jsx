@@ -15,6 +15,8 @@ export default function Header() {
             <button className="btn about">
                 About
             </button>
+            <Link to="/informative">Informative</Link>
+            <Link to="/focused">Focused</Link>
         </div>
     )
 }

@@ -1,22 +1,18 @@
 .landing-page {
-    height: 100vh;
+    flex: 1;
     display: flex;
     flex-direction: column;
-    background-color: #1a0a2e;
-    background-image: radial-gradient(circle, rgba(255, 255, 255, 0.15) 1px, transparent 1px);
-    background-size: 30px 30px;
-    min-height: 100vh;
-    justify-content: center;
     align-items: center;
+    justify-content: center;
 }
 
 .prompt-container {
     display: flex;
     flex-direction: row;
+    width: min(1000px, 90%);
+    height: 100px;
     border: 1px solid dimgray;
     border-radius: 50px;
-    width: 1000px;
-    height: 100px;
     background-color: lightgray;
 }
 
@@ -24,23 +20,27 @@
     flex: 10;
     padding-left: 50px;
     font-size: 25px;
-    border-radius: 50px;
-    background-color: lightgray;
     border: none;
-}
-
-.prompt-input::placeholder {
-    font-size: 25px;
+    border-radius: 50px;
+    background-color: inherit; 
 }
 
 .prompt-input:focus {
     outline: none;
 }
 
-.btn-submit {
+.prompt-submit {
     flex: 1;
-    border-radius: 50px;
-    background-color: lightgray;
     font-size: 30px;
+    border-radius: 50px;
+    background-color: inherit;
 }
 
+
+.error-container{
+    height: 24px;          /* or whatever fits one line of error text */
+    /* optionally: */
+    color: red;
+    text-align: center;
+    padding: 10px;
+}

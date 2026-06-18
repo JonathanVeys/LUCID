@@ -1,0 +1,84 @@
+html, body, #root {
+  height: 100%;
+  margin: 0;
+}
+
+.informative-div {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;            /* the page itself never scrolls */
+  box-sizing: border-box;
+}
+
+.metadata-div {
+  flex: 0 0 auto;              /* size to content, don't stretch */
+  padding: 10px 25px;
+}
+.title { margin: 0; color: white; }
+.description { margin: 4px 0 0; color: gray; }
+
+.charts-div {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;              /* KEY: row can shrink inside the column */
+  gap: 10px;
+  padding: 10px;
+  box-sizing: border-box;
+}
+
+.primary-charts-div {
+  display: flex;
+  flex: 10;
+  min-width: 0;            
+  min-height: 0;
+  gap: 10px;
+}
+
+.supportive-charts-div {
+  display: flex;
+  flex-direction: column;
+  flex: 5;
+  min-width: 0;
+  min-height: 0;
+  gap: 10px;
+}
+
+.chart-card {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0;            
+  min-width: 0;
+  min-height: 0;            
+  padding: 10px;
+  color: white;
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 12px;
+  box-sizing: border-box;
+}
+
+.chart-title {
+  flex: 0 0 auto;
+  margin: 0 0 8px;
+  text-align: center;
+  font-size: 1rem;
+}
+
+.chart {
+  flex: 1 1 0;
+  min-height: 0;         
+  width: 100%;
+  overflow: hidden;
+  border: 1px dashed dimgray;
+}
+
+.chart-description {
+  flex: 0 0 auto;
+  margin: 8px 0 0;
+  font-size: 0.85rem;
+}
+
+.chart-placeholder { margin: auto; color: dimgray; }

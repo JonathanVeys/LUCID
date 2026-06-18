@@ -1,4 +1,10 @@
-/* layout.css */
+.layout {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;     /* header / main / footer stack */
+}
 .layout-content {
-  padding-top: 80px;
+    flex: 1;                    /* main fills the space between header and footer */
+    display: flex;
+    flex-direction: column;
 }

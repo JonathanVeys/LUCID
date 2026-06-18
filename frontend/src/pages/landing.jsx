@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { sendQuery } from "../../services/api";
 import Spinner from "../components/shared/spinner/spinner";
 
@@ -8,25 +8,29 @@ import "../styles/landing.css";
 function Landing() {
     const [query, setQuery] = useState("");
     const [loading, setLoading] = useState(false);
+    const [error, setError] = useState("");
     const navigate = useNavigate();
+
+    const ROUTES = {
+        focused: "/focused",
+        informative: "/informative",
+    };
 
     const handleSubmit = async () => {
         if (loading || !query.trim()) return;
         setLoading(true);
         try {
-            const result = await sendQuery(query);
-            const { vis_spec } = JSON.parse(result.response);   
-            console.log(vis_spec);
+            const response = await sendQuery(query);
+            const spec = response.spec
+            
+            if (spec.answerable){
+                const vis_spec = response.spec.vis_spec;
+                const route = ROUTES[vis_spec.layout_mode];
 
-            navigate("/focused", {
-            state: {
-                title: vis_spec.title,
-                overview: vis_spec.overview,
-                insights: vis_spec.insights,
-                main: vis_spec.main,
-                supporting: vis_spec.supporting,
-            },
-            });
+                navigate(route, { state: { vis_spec } });
+            } else{
+                setError(spec.reason);
+            }
         } catch (err) {
             console.error("Query failed:", err);
         } finally {
@@ -34,6 +38,12 @@ function Landing() {
             setQuery("");
         }
     };
+
+    useEffect(() => {
+        if (!error) return;                      // nothing to clear
+        const id = setTimeout(() => setError(""), 10000);
+        return () => clearTimeout(id);           // cancel if error changes or component unmounts
+    }, [error]);
 
     return (
         <div className="landing-page">
@@ -47,7 +57,10 @@ function Landing() {
                     onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
                     disabled={loading}
                 />
-                <button className="btn-submit" onClick={handleSubmit} disabled={loading}>{loading ? <Spinner /> : "→"}</button>
+                <button className="prompt-submit" onClick={handleSubmit} disabled={loading}>{loading ? <Spinner /> : "→"}</button>
+            </div>
+            <div className="error-container">
+                {error}
             </div>
         </div>
     )
