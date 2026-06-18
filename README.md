@@ -19,14 +19,26 @@ Key architectural choices:
 
 ## How to use it
 
+### Boot App
+
+- **Database** (from repo root): `docker compose up -d`
+- **Backend** (run from the **repo root**, not inside `backend/`, so `backend.*` imports resolve):
+  - `python3 -m venv backend/.venv`
+  - `backend/.venv/bin/python -m pip install -r backend/requirements.txt`
+  - `backend/.venv/bin/python -m uvicorn backend.main:app --reload`
+- **Frontend**: `cd frontend && npm install && npm run dev`
+
 1. Navigate to the application URL below
 2. Enter a natural language query about fraud or cybercrime data (e.g. *"Show me phishing incidents in Southeast Asia over the past year"*)
 3. The system generates and displays an interactive dashboard
 4. Refine your query to explore the data further
 
-## Live Demo
+# URLs
 
-`[URL to be added]`
+- Frontend: http://localhost:5173 (Vite default)
+- Backend: http://127.0.0.1:8000
+- API docs: http://127.0.0.1:8000/docs
+
 
 ## Tech Stack
 
