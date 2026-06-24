@@ -4,6 +4,7 @@ from pydantic_core import ErrorDetails
 from dotenv import load_dotenv
 from openai import OpenAI
 import os
+import json
 from pathlib import Path
 from sqlalchemy import create_engine
 
@@ -147,6 +148,8 @@ async def handle_query(query: QueryRequest) -> dict:
         raise HTTPException(status_code=422, detail={"errors": errors})
     if not spec:
         raise ValueError("Spec was empty")  
+    # print(json.dumps(spec, indent=2))
+    print(spec)
     return {"spec": spec}
 
      

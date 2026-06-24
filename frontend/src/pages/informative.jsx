@@ -1,20 +1,20 @@
 import { useLocation } from "react-router-dom";
-import Chart from "../components/utils/Chart";
+import ChartCard from "../components/utils/Chart";
 import "../styles/informative.css";
 
-function ChartCard({ chart, fallbackTitle }) {
-  return (
-    <div className="chart-card">
-      <h2 className="chart-title">{chart?.title || fallbackTitle}</h2>
-      <div className="chart">
-        {chart
-          ? <Chart spec={chart.vega_lite} />
-          : <span className="chart-placeholder">{fallbackTitle} placeholder</span>}
-      </div>
-      {chart?.summary && <p className="chart-description">{chart.summary}</p>}
-    </div>
-  );
-}
+// function ChartCard({ chart, fallbackTitle }) {
+//   return (
+//     <div className="chart-card">
+//       <h2 className="chart-title">{chart?.title || fallbackTitle}</h2>
+//       <div className="chart">
+//         {chart
+//           ? <Chart spec={chart.vega_lite} />
+//           : <span className="chart-placeholder">{fallbackTitle} placeholder</span>}
+//       </div>
+//       {chart?.summary && <p className="chart-description">{chart.summary}</p>}
+//     </div>
+//   );
+// }
 
 export default function Informative() {
   const location = useLocation();

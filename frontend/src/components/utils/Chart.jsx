@@ -1,7 +1,7 @@
 import { VegaEmbed } from "react-vega";
 import { useEffect, useRef, useState } from "react";
 
-export default function Chart({ spec }) {
+function Chart({ spec }) {
   const containerRef = useRef(null);
   const [size, setSize] = useState({ width: 0, height: 0 });
 
@@ -24,10 +24,25 @@ export default function Chart({ spec }) {
   };
 
   return (
-    <div ref={containerRef} style={{ width: "100%", height: "100%" }}>
+    <div ref={containerRef} style={{ width: "100%", height: "100%"}}>
       {size.width > 0 && size.height > 0 && (
         <VegaEmbed spec={sizedSpec} actions={false} />
       )}
+    </div>
+  );
+}
+
+
+export default function ChartCard({ chart, fallbackTitle }) {
+  return (
+    <div className="chart-card">
+      <h2 className="chart-title">{chart?.title || fallbackTitle}</h2>
+      <div className="chart">
+        {chart
+          ? <Chart spec={chart.vega_lite} />
+          : <span className="chart-placeholder">{fallbackTitle} placeholder</span>}
+      </div>
+      {chart?.summary && <p className="chart-description">{chart.summary}</p>}
     </div>
   );
 }

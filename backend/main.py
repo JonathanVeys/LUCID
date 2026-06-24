@@ -17,4 +17,4 @@ app.include_router(
 
 @app.get("/")
 def root():
-    return {"message": "GUIDE is running"}
+    return {"message": "LUCID is running"}
