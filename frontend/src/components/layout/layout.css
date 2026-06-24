@@ -7,4 +7,5 @@
     flex: 1;                    /* main fills the space between header and footer */
     display: flex;
     flex-direction: column;
+    overflow: scroll;
 }

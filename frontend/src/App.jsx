@@ -4,6 +4,7 @@ import Landing from "./pages/landing";
 import Informative from "./pages/informative";
 import Focused from "./pages/focused";
 import Layout from "./components/layout/layout";
+import About from "./pages/about";
 
 import "./styles/global.css";
 
@@ -16,6 +17,7 @@ export default function App() {
           <Route path="/" element={<Landing />} />
           <Route path="/informative" element={<Informative />} />
           <Route path="/focused" element={<Focused />} />
+          <Route path="/about" element={<About />} />
         </Route>
       </Routes>
     </BrowserRouter>

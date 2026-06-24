@@ -12,9 +12,8 @@ export default function Header() {
             <a className="btn github" href="https://github.com/JonathanVeys/LUCID" target="_blank" rel="noopener noreferrer">
                 GitHub
             </a>
-            <button className="btn about">
-                About
-            </button>
+
+            <Link to="/about">About</Link>
             <Link to="/informative">Informative</Link>
             <Link to="/focused">Focused</Link>
         </div>

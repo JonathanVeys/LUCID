@@ -1,0 +1,8 @@
+.about-div{
+    display: flex;
+    flex-direction: column;
+    padding: 10px;
+    color: white;
+    padding-left: 200px;
+    padding-right: 200px;
+}

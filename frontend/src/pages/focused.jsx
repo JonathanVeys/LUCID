@@ -7,7 +7,8 @@ export default function Focused() {
   const visSpec = location.state?.vis_spec;
   const title = visSpec?.title || "Focused Dashboard";
   const description = visSpec?.description || "This is a description";
-  const primaries = [];
+  const charts = visSpec?.charts ?? [];
+  const primaries = charts.filter((c) => c.role === "primary");
 
   return (
     <div className="focused-div">

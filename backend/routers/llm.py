@@ -148,8 +148,6 @@ async def handle_query(query: QueryRequest) -> dict:
         raise HTTPException(status_code=422, detail={"errors": errors})
     if not spec:
         raise ValueError("Spec was empty")  
-    # print(json.dumps(spec, indent=2))
-    print(spec)
     return {"spec": spec}
 
      
