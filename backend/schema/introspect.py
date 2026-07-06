@@ -1,7 +1,10 @@
 from dataclasses import dataclass, field
 
-from sqlalchemy import Engine, inspect
+from sqlalchemy import Engine, inspect, text
 
+
+ENUMERABLE_COLUMNS = ["crime_type", "location_region", "confidence"]
+ORDINAL_ORDER = {"confidence": ["high", "medium", "low"]}
 
 @dataclass
 class Column:
@@ -61,3 +64,48 @@ def load_schema(engine: Engine, schema: str = "public") -> DBSchema:
         tables[table_name] = Table(name=table_name, columns=columns)
 
     return DBSchema(tables=tables)
+
+
+
+def format_schema_for_prompt(engine, table_names=("incidents",)):
+    db_schema = load_schema(engine)
+    blocks = []
+    for tname in table_names:
+        table = db_schema.tables.get(tname)
+        if table is None:
+            continue
+
+        name_w = max([len("Column")] + [len(c.name) for c in table.columns])
+        type_w = max([len("Type")] + [len(c.type) for c in table.columns])
+
+        header = f"| {'Column'.ljust(name_w)} | {'Type'.ljust(type_w)} |"
+        sep    = f"| {'-' * name_w} | {'-' * type_w} |"
+        rows   = "\n".join(
+            f"| {c.name.ljust(name_w)} | {c.type.ljust(type_w)} |"
+            for c in table.columns
+        )
+        blocks.append(
+            f"{header}\n{sep}\n{rows}"
+        )
+    return "\n\n".join(blocks)
+
+
+
+def get_column_vocab(engine, column, table="incidents"):
+    with engine.connect() as conn:
+        rows = conn.execute(text(
+            f"SELECT DISTINCT {column} FROM {table} "
+            f"WHERE {column} IS NOT NULL ORDER BY {column}"
+        ))
+        values = [r[0] for r in rows]
+    if column in ORDINAL_ORDER:
+        order = ORDINAL_ORDER[column]
+        values.sort(key=lambda v: order.index(v) if v in order else len(order))
+    return values
+
+def format_vocab_for_prompt(engine):
+    lines = []
+    for col in ENUMERABLE_COLUMNS:
+        quoted = ", ".join(f"'{v}'" for v in get_column_vocab(engine, col))
+        lines.append(f"- {col}: {quoted}")
+    return "\n".join(lines)

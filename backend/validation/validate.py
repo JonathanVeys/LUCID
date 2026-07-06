@@ -4,11 +4,11 @@ from backend.schema.introspect import DBSchema
 
     
 
-def validate(raw_spec:dict, db_schema:DBSchema):
+def validate(vis_spec:dict, db_schema:DBSchema):
     '''
     
     '''
-    spec, errors = validate_vis_spec(raw_spec)
+    spec, errors = validate_vis_spec(vis_spec)
     if errors:
         return None, errors
     

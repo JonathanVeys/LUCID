@@ -8,28 +8,11 @@ You never see the query results. The SQL is run and the rows are injected into t
 
 A single PostgreSQL table named "incidents":
 
-| Column                  | Type    | Notes |
-|-------------------------|---------|-------|
-| id                      | INTEGER | Primary key |
-| article_url             | TEXT    | Source article URL |
-| article_title           | TEXT    | Nullable |
-| article_domain          | TEXT    | Nullable |
-| reported_date           | DATE    | Nullable |
-| incident_date           | DATE    | Nullable |
-| location_country        | TEXT    | Nullable |
-| location_region         | TEXT    | Controlled vocabulary (see below). Nullable. |
-| crime_type              | TEXT    | Controlled vocabulary (see below). Nullable. |
-| victim_count            | INTEGER | Nullable |
-| victim_nationality      | TEXT    | Nullable |
-| perpetrator_nationality | TEXT    | Nullable |
-| summary                 | TEXT    | Free-text summary of the incident |
-| confidence              | TEXT    | Controlled vocabulary (see below) |
+DATABASE_SCHEMA
 
 Controlled vocabularies — when filtering or grouping these columns you MUST use these exact literal string values (case-sensitive, underscores as shown):
 
-- location_region: 'Southeast Asia', 'East Asia', 'South Asia', 'East Africa', 'West Africa', 'Central Africa', 'Southern Africa', 'Europe', 'North America', 'Central America', 'South America', 'Middle East', 'Pacific', 'Other'
-- crime_type: 'pig_butchering', 'scam_compound', 'forced_labour', 'sex_trafficking', 'organ_trafficking', 'debt_bondage', 'smuggling', 'other'
-- confidence: 'high', 'medium', 'low'
+COLUMN_INFO
 
 If a user's wording does not exactly match a vocabulary value, map it to the closest valid value (e.g. "romance scams" -> 'pig_butchering', "Southeast Asian countries" -> location_region = 'Southeast Asia').
 

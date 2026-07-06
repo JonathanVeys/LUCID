@@ -6,16 +6,13 @@ export default function Header() {
 
     return (
         <div className="header-div">
-            <button className="btn home" onClick={() => navigate("/")}>
-                Home
-            </button>
+            <Link to="/" className="btn">Home</Link>
             <a className="btn github" href="https://github.com/JonathanVeys/LUCID" target="_blank" rel="noopener noreferrer">
                 GitHub
             </a>
-
-            <Link to="/about">About</Link>
-            <Link to="/informative">Informative</Link>
-            <Link to="/focused">Focused</Link>
+            <Link to="/about" className="btn">About</Link>
+            <Link to="/informative" className="btn">Informative</Link>
+            <Link to="/focused" className="btn">Focused</Link>
         </div>
     )
 }

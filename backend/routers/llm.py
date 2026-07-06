@@ -9,41 +9,64 @@ from pathlib import Path
 from sqlalchemy import create_engine
 
 from backend.services.inject import inject_data
-from backend.schema.introspect import load_schema
+from backend.schema.introspect import load_schema, format_schema_for_prompt, format_vocab_for_prompt
 from backend.validation.validate import validate
 from backend.validation.component_validation.parse_json import parse_model_json
 
-load_dotenv()
 
+import time
+import functools
+
+def timing_val(func):
+    """Decorator that measures execution time and returns the function's value."""
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        start_time = time.perf_counter()
+        
+        # Execute the original function and store its output
+        result = func(*args, **kwargs)
+        
+        end_time = time.perf_counter()
+        execution_time = end_time - start_time
+        
+        print(f"Function '{func.__name__}' took {execution_time:.6f} seconds to execute.")
+        
+        # Return the original value so the program can continue as expected
+        return result
+    return wrapper
+
+
+
+
+load_dotenv()
 
 class QueryRequest(BaseModel):
     query: str
 
 
+PARENT_PATH = Path(__file__).parent.parent
 DATABASE_URL = os.getenv("DATABASE_URL")
 if DATABASE_URL:
     engine = create_engine(DATABASE_URL)
     db_schema = load_schema(engine)
 
 
-PARENT_PATH = Path(__file__).parent.parent
-SYSTEM_PROMPT = (PARENT_PATH / "prompts/system_prompt.txt").read_text()
-
-
 router = APIRouter(prefix="/api")
 
+#On backend boot, inject database information into system prompt
 
-client = OpenAI(
-    api_key=os.environ["ELM_API_KEY"]
+_template = (PARENT_PATH / "prompts/system_prompt_final.txt").read_text(encoding="utf-8")
+SYSTEM_PROMPT = (
+    _template
+    .replace("DATABASE_SCHEMA", format_schema_for_prompt(engine))  
+    .replace("COLUMN_INFO", format_vocab_for_prompt(engine))
 )
 
-
 def build_initial_prompt(prompt: str) -> list[dict]:
-    augmented_prompt = [
+    return [
         {"role": "system", "content": SYSTEM_PROMPT},
-        {"role": "user", "content": prompt}
+        {"role": "user", "content": prompt},
     ]
-    return augmented_prompt
 
 def build_healing_prompt(errors: list[str]|list[ErrorDetails]|str) -> str:
     """Format validation/parse errors into a re-prompt for the model.
@@ -60,18 +83,22 @@ def build_healing_prompt(errors: list[str]|list[ErrorDetails]|str) -> str:
         f"{bullets}"
     )
 
-def inference(query):
+def inference(query, temperature:float=1):
     """
     API endpoint for prompting the model.
     Input:  query.query (str) — the model query
     Output: dict with the model's response text
     Raises: HTTPException on upstream or internal failure
     """
+    client = OpenAI(
+        api_key=os.environ["ELM_API_KEY"]
+    )
+
     try:
         res = client.chat.completions.create(
             messages=query, 
             model="gpt-4-turbo",
-            temperature=0
+            temperature=temperature
         )
     except Exception as e:
         raise HTTPException(status_code=502, detail="Upstream model error")
@@ -88,51 +115,64 @@ def inference(query):
 
 
 
-def generate_validated_spec(query: str, schema=db_schema, max_retry: int = 3):
-    print(f"INFO: generate_validated_spec started | query={query!r} | max_retry={max_retry}")
-    messages = build_initial_prompt(query)        # the conversation, starts with system + user
-    last_errors = None
-    for attempt in range(max_retry):
-        print(f"INFO: attempt {attempt + 1}/{max_retry} | calling model")
-        content = inference(messages)               # iteration 1 = initial; later = retry
-        print(f"INFO: attempt {attempt + 1}/{max_retry} | model returned {len(content)} chars")
-        raw, errors = parse_model_json(content)
-        if not errors:
-            print(f"INFO: attempt {attempt + 1}/{max_retry} | JSON parsed OK")
-            if raw:
-                if "answerable" not in raw.keys():
-                    errors = ["Response must include the 'answerable' field."]
-                elif not raw["answerable"]:
-                    return raw, None
-                else: 
-                    spec, errors = validate(raw["vis_spec"], schema)
-                    if not errors:
-                        print(f"INFO: attempt {attempt + 1}/{max_retry} | validation passed — returning spec")
-                        return {"answerable":True, "vis_spec":spec.model_dump()}, None #type:ignore
-                    print(f"INFO: attempt {attempt + 1}/{max_retry} | validation failed with {len(errors)} error(s)")
-        else:
-            print(f"INFO: attempt {attempt + 1}/{max_retry} | JSON parse failed")
-        # any failure (parse OR validate) lands here
-        print(f"WARNING: attempt {attempt + 1}/{max_retry} | errors fed back to model: {errors}")
-        last_errors = errors
-        if errors:
-            messages.append({"role": "assistant", "content": content})
-            messages.append({"role": "user", "content": build_healing_prompt(errors)})
-    print(f"WARNING: pipeline exhausted after {max_retry} attempts — returning errors: {last_errors}")
-    return None, last_errors                          # exhausted
 
 
-def generate_dashboard_spec(query:QueryRequest, schema=db_schema, max_retry: int = 3):
+def evaluate_response(spec, schema=db_schema, debug:bool=False):
     '''
-    
+    A function for evaluating a visualisation specification against a predefined schema
     '''
-    spec, errors = generate_validated_spec(query.query)
-
+    raw, errors = parse_model_json(spec)
+    if errors:  #Check for json syntax errors
+        return None, errors
+    if not raw:  #Ensure that the model has returned some raw spec
+        return None, ["Visualisation specification was empty or unparsable output."]
+    if "answerable" not in raw.keys():  #Check if the answerable field is present
+        return None, ["Response must include 'answerable' field"]
+    if not raw["answerable"]:   #Check if the model has flagged the response as unanswerable
+        return raw, None
+    if "vis_spec" not in raw.keys(): #Check that the model contains a vis_spec
+        return None, ["Response must include 'vis_spec' field"]
+    spec, errors = validate(raw["vis_spec"], schema)    #Return syntax and semantic errors from the vis_spec
     if errors:
         return None, errors
     else:
-        spec = inject_data(spec, engine)
-        return spec, None
+        return raw, None
+
+def generate_validated_spec(query:str, schema=db_schema, MAX_RETRY:int=3):
+    '''
+    A function for converting a query to a validated visualisation specification
+    '''
+    print(f"INFO: generate_validated_spec started | query={query!r}")
+    messages = build_initial_prompt(query)
+    last_errors = None
+
+    for attempt in range(MAX_RETRY+1):
+        print(f"INFO: RETRY {attempt}/{MAX_RETRY} | Calling model" if attempt>0 else f"INFO: Initial inference call")
+        content=inference(messages)
+        print(content)
+        result, errors = evaluate_response(content, schema)
+        if not errors:
+            print(f"INFO: RETRY {attempt + 1}/{MAX_RETRY} | validation passed — returning spec" if attempt>0 else f"INFO: Initial inference | validation passed - returning spec")
+            return result, None
+        last_errors = errors
+        print(f"WARNING: RETRY {attempt + 1}/{MAX_RETRY} | Evaluation failed with errors: {last_errors}" if attempt>0 else f"WARNING: INITIAL Inference | Evaluation failed with errors: {last_errors}")
+        messages.append({"role":"assistant", "content":content})
+        messages.append({"role":"user", "content":build_healing_prompt(errors)})
+    return None, last_errors
+    
+@timing_val
+def generate_dashboard_spec(query:QueryRequest, schema=db_schema, MAX_RETRY: int = 3):
+    '''
+    A function that takes a validat 
+    '''
+    spec, errors = generate_validated_spec(query.query, MAX_RETRY=MAX_RETRY)
+
+    if errors:
+        return None, errors
+    if "vis_spec" in spec.keys():  #type: ignore
+        spec = inject_data(spec, engine)         #type: ignore
+    return spec, None
+
 
 @router.post("/generate")
 async def handle_query(query: QueryRequest) -> dict:
@@ -151,4 +191,3 @@ async def handle_query(query: QueryRequest) -> dict:
     return {"spec": spec}
 
      
-
