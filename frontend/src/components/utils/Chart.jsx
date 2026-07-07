@@ -33,8 +33,6 @@ function Chart({ spec }) {
     autosize: { type: "fit", contains: "padding" },
   };
 
-  // renderer forwards to vega-embed the same way your existing actions={false} does.
-  // SVG keeps the map crisp when the zoom wrapper scales it (canvas would blur).
   const embed = (
     <VegaEmbed spec={sizedSpec} actions={false} renderer={map ? "svg" : "canvas"} />
   );

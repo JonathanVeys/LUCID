@@ -149,7 +149,6 @@ def generate_validated_spec(query:str, schema=db_schema, MAX_RETRY:int=3):
     for attempt in range(MAX_RETRY+1):
         print(f"INFO: RETRY {attempt}/{MAX_RETRY} | Calling model" if attempt>0 else f"INFO: Initial inference call")
         content=inference(messages)
-        print(content)
         result, errors = evaluate_response(content, schema)
         if not errors:
             print(f"INFO: RETRY {attempt + 1}/{MAX_RETRY} | validation passed — returning spec" if attempt>0 else f"INFO: Initial inference | validation passed - returning spec")
