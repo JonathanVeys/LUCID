@@ -6,14 +6,10 @@ from backend.routers.llm import router as query_router
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
-    allow_methods=["*"],
-    allow_headers=["*"]
-)
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["https://lucid-6kv9.onrender.com"],  # your static site URL
+    allow_origins=[
+        "http://localhost:5173",
+        "https://lucid-frontend-udqf.onrender.com",  # the site you open in the browser
+    ],
     allow_methods=["*"],
     allow_headers=["*"],
 )
