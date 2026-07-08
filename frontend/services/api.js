@@ -1,12 +1,9 @@
 const API_URL = import.meta.env.VITE_API_URL;
-
 export async function sendQuery(query) {
-    const response = await fetch(`/api/generate`, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ query }),
-    });
-    return await response.json();
+  const response = await fetch(`${API_URL}/api/generate`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ query }),
+  });
+  return await response.json();
 }

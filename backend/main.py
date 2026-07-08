@@ -11,6 +11,14 @@ app.add_middleware(
     allow_headers=["*"]
 )
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["https://lucid-6kv9.onrender.com"],  # your static site URL
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
 app.include_router(
     query_router
 )
