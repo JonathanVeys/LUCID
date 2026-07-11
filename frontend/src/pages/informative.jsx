@@ -23,10 +23,10 @@ export default function Informative() {
       <div className="charts-div">
         <div className="primary-charts-div">
           <ChartCard chart={primaries[0]} fallbackTitle="Primary Chart One" />
-          <ChartCard chart={primaries[1]} fallbackTitle="Primary Chart Two" />
+          {/* <ChartCard chart={primaries[1]} fallbackTitle="Primary Chart Two" /> */}
         </div>
         <div className="supportive-charts-div">
-          <ChartCard chart={supportives[0]} fallbackTitle="Supporting Chart One" />
+          {/* <ChartCard chart={supportives[0]} fallbackTitle="Supporting Chart One" /> */}
           <ChartCard chart={supportives[1]} fallbackTitle="Supporting Chart Two" />
           <ChartCard chart={supportives[2]} fallbackTitle="Supporting Chart Three" />
         </div>
