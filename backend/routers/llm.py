@@ -147,6 +147,7 @@ def generate_validated_spec(query:str, schema=db_schema, MAX_RETRY:int=3):
     last_errors = None
 
     for attempt in range(MAX_RETRY + 1):
+        print(f"INFO: Inference attempt {attempt}" if attempt>0 else f"INFO: Initial inference")
         content = inference(messages)
         result, errors = evaluate_response(content, schema)
 
