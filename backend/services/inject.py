@@ -58,9 +58,9 @@ def inject_choropleth_data(chart, rows, country_key="location_country"):
 def inject_data(spec:dict, engine:Engine):
     with engine.connect() as conn:
         for chart in spec["vis_spec"]["charts"]:
-            print("Chart SQL:")
-            print(chart['sql'])
-            print("="*100)
+            # print("Chart SQL:")
+            # print(chart['sql'])
+            # print("="*100)
             result = conn.exec_driver_sql(str(chart["sql"]))
             rows = [dict(row._mapping) for row in result]
 

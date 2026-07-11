@@ -182,7 +182,7 @@ async def handle_query(query: QueryRequest) -> dict:
     Raises: HTTPException on upstream or internal failure
     """
     spec, errors = generate_dashboard_spec(query)
-
+    print(spec)
     if errors:
         raise HTTPException(status_code=422, detail={"errors": errors})
     if not spec:
