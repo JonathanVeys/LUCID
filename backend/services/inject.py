@@ -64,6 +64,7 @@ def inject_data(spec:dict, engine:Engine):
             result = conn.exec_driver_sql(str(chart["sql"]))
             rows = [dict(row._mapping) for row in result]
 
+            
             mark = chart["vega_lite"]["mark"]
             mark_type = mark["type"] if isinstance(mark, dict) else mark
             if mark_type == "geoshape":

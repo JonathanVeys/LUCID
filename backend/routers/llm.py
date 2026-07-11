@@ -146,17 +146,23 @@ def generate_validated_spec(query:str, schema=db_schema, MAX_RETRY:int=3):
     messages = build_initial_prompt(query)
     last_errors = None
 
-    for attempt in range(MAX_RETRY+1):
-        print(f"INFO: RETRY {attempt}/{MAX_RETRY} | Calling model" if attempt>0 else f"INFO: Initial inference call")
-        content=inference(messages)
+    for attempt in range(MAX_RETRY + 1):
+        content = inference(messages)
         result, errors = evaluate_response(content, schema)
-        if not errors:
-            print(f"INFO: RETRY {attempt + 1}/{MAX_RETRY} | validation passed — returning spec" if attempt>0 else f"INFO: Initial inference | validation passed - returning spec")
-            return result, None
+
+        if not errors and result:
+            try:
+                inject_data(result, engine)
+                print("INFO: validation + injection passed — returning spec")
+                return result, None                     
+            except Exception as e:
+                errors = f"The generated SQL failed to execute: {e}"  
+
         last_errors = errors
-        print(f"WARNING: RETRY {attempt + 1}/{MAX_RETRY} | Evaluation failed with errors: {last_errors}" if attempt>0 else f"WARNING: INITIAL Inference | Evaluation failed with errors: {last_errors}")
-        messages.append({"role":"assistant", "content":content})
-        messages.append({"role":"user", "content":build_healing_prompt(errors)})
+        print(f"WARNING: attempt {attempt} failed: {last_errors}")
+        messages.append({"role": "assistant", "content": content})
+        messages.append({"role": "user", "content": build_healing_prompt(errors)}) 
+
     return None, last_errors
     
 @timing_val
@@ -168,8 +174,8 @@ def generate_dashboard_spec(query:QueryRequest, schema=db_schema, MAX_RETRY: int
 
     if errors:
         return None, errors
-    if "vis_spec" in spec.keys():  #type: ignore
-        spec = inject_data(spec, engine)         #type: ignore
+    # if "vis_spec" in spec.keys():  #type: ignore
+        # spec = inject_data(spec, engine)         #type: ignore
     return spec, None
 
 
@@ -182,7 +188,6 @@ async def handle_query(query: QueryRequest) -> dict:
     Raises: HTTPException on upstream or internal failure
     """
     spec, errors = generate_dashboard_spec(query)
-    print(spec)
     if errors:
         raise HTTPException(status_code=422, detail={"errors": errors})
     if not spec:

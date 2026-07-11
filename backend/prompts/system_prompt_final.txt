@@ -53,10 +53,10 @@ This guidance takes precedence over SQL rule 4 for the date columns specifically
 3. Use only the columns listed above. Do not invent column names.
 4. When aggregating, exclude NULLs in the grouped/measured columns (WHERE <col> IS NOT NULL). Exception: the date columns are governed by the DATA COMPLETENESS rules above — do not blanket-filter incident_date to non-NULL merely to satisfy this rule.
 5. Include ORDER BY whenever results are ranked or sorted.
-6. Add LIMIT 1000 to every query, unless a stricter limit applies (see rule 9).
+6. Do NOT add a LIMIT clause to a query. The only exception is the bar-chart cap in rule 9. (The dataset is small, so unbounded aggregate queries are safe, and a blanket LIMIT can silently truncate a time series by cutting off its later dates.)
 7. Each chart has its OWN SQL query, returning exactly the columns that chart's Vega-Lite encoding references. Different charts may query the data differently.
 8. A choropleth map (mark "geoshape") is the one exception to rule 7: its SQL MUST group by location_country and select location_country plus exactly one aggregated measure, even though the Vega-Lite encoding references a field called "value" rather than those columns. NEVER group or filter a map's SQL by location_region. (See MAPS below.)
-9. A bar chart must show no more than 15 bars. When a bar chart's category column can take many values (e.g. victim_nationality, perpetrator_nationality, location_country), rank by the measured quantity and cap the result with LIMIT 15 — i.e. "ORDER BY <count> DESC LIMIT 15" — so only the top 15 categories are returned. For categories that are naturally few (e.g. crime_type, confidence, location_region) this cap will simply never bind, which is fine; still keep the ORDER BY. This LIMIT 15 replaces LIMIT 1000 for bar charts.
+9. A bar chart must show no more than 15 bars. When a bar chart's category column can take many values (e.g. victim_nationality, perpetrator_nationality, location_country), rank by the measured quantity and cap the result with LIMIT 15 — i.e. "ORDER BY <count> DESC LIMIT 15" — so only the top 15 categories are returned. For categories that are naturally few (e.g. crime_type, confidence, location_region) this cap will simply never bind, which is fine; still keep the ORDER BY. LIMIT 15 on bar charts is the ONLY LIMIT clause you should ever add to any query.
 
 === CHART RULES ===
 
@@ -108,7 +108,7 @@ A map chart's "vega_lite" block must reproduce this structure. Only "title" (if 
     "color": {
       "field": "value",
       "type": "quantitative",
-      "scale": {"scheme": "yelloworangered", "type":"sqrt"},
+      "scale": {"scheme": "yelloworangered", "type":"log"},
       "legend": {"title": "<a descriptive label for the measure, e.g. Reported incidents>"}
     },
     "tooltip": [
@@ -170,7 +170,7 @@ add an interaction that does nothing for that chart's structure.
 
 You will select one template out of "focused" or "informative" that will decide the dashboard layout. You will base this decision on the user prompt.
 - "focused": a specific, narrow question. Exactly 1 primary chart and no supporting charts.
-- "informative": a broad or open-ended question. Exactly 1 primary charts and 2 supporting charts.
+- "informative": a broad or open-ended question. Exactly 2 primary charts and 3 supporting charts.
 
 You must match exactly the number of charts in the template.
 
@@ -230,7 +230,7 @@ Return one JSON object and nothing else. No prose, no explanation, no markdown, 
 
 User query: "Give me an overview of trafficking in Southeast Asia"
 
-(Broad, open-ended -> informative -> exactly 1 primary + 2 supporting charts.)
+(Broad, open-ended -> informative -> exactly 2 primary + 3 supporting charts.)
 
 {
   "answerable": true,
@@ -252,6 +252,27 @@ User query: "Give me an overview of trafficking in Southeast Asia"
             "y": {"field": "incident_count", "type": "quantitative", "axis": {"title": "Number of incidents"}},
             "tooltip": [
               {"field": "crime_type", "type": "nominal"},
+              {"field": "incident_count", "type": "quantitative"}
+            ]
+          }
+        }
+      },
+      {
+        "role": "primary",
+        "title": "Incidents over time",
+        "summary": "Follow the line to see how reporting volume changes over time; pan and zoom to inspect specific periods.",
+        "sql": "SELECT reported_date, COUNT(*) AS incident_count FROM incidents WHERE location_region = 'Southeast Asia' AND reported_date IS NOT NULL GROUP BY reported_date ORDER BY reported_date",
+        "vega_lite": {
+          "$schema": "https://vega-lite.github.io/schema/vega-lite/v5.json",
+          "mark": "line",
+          "params": [
+            {"name": "view", "select": {"type": "interval", "encodings": ["x", "y"]}, "bind": "scales"}
+          ],
+          "encoding": {
+            "x": {"field": "reported_date", "type": "temporal", "axis": {"title": "Reported date"}},
+            "y": {"field": "incident_count", "type": "quantitative", "axis": {"title": "Number of incidents"}},
+            "tooltip": [
+              {"field": "reported_date", "type": "temporal"},
               {"field": "incident_count", "type": "quantitative"}
             ]
           }
@@ -292,6 +313,30 @@ User query: "Give me an overview of trafficking in Southeast Asia"
             ]
           }
         }
+      },
+      {
+        "role": "supporting",
+        "title": "Crime types over time",
+        "summary": "Use the legend to isolate a crime type and follow how each one trends over time.",
+        "sql": "SELECT reported_date, crime_type, COUNT(*) AS incident_count FROM incidents WHERE location_region = 'Southeast Asia' AND reported_date IS NOT NULL AND crime_type IS NOT NULL GROUP BY reported_date, crime_type ORDER BY reported_date",
+        "vega_lite": {
+          "$schema": "https://vega-lite.github.io/schema/vega-lite/v5.json",
+          "mark": "line",
+          "params": [
+            {"name": "cat", "select": {"type": "point", "fields": ["crime_type"]}, "bind": "legend"}
+          ],
+          "encoding": {
+            "x": {"field": "reported_date", "type": "temporal", "axis": {"title": "Reported date"}},
+            "y": {"field": "incident_count", "type": "quantitative", "axis": {"title": "Number of incidents"}},
+            "color": {"field": "crime_type", "type": "nominal", "legend": {"title": "Crime type"}},
+            "opacity": {"condition": {"param": "cat", "value": 1}, "value": 0.15},
+            "tooltip": [
+              {"field": "reported_date", "type": "temporal"},
+              {"field": "crime_type", "type": "nominal"},
+              {"field": "incident_count", "type": "quantitative"}
+            ]
+          }
+        }
       }
     ]
   }
@@ -314,7 +359,7 @@ User query: "Which countries report the most pig butchering scams?"
         "role": "primary",
         "title": "Reported incidents by country",
         "summary": "Read the shading to compare which countries report pig-butchering incidents most often; hover a country for its value.",
-        "sql": "SELECT location_country, COUNT(*) AS incident_count FROM incidents WHERE crime_type = 'pig_butchering' AND location_country IS NOT NULL GROUP BY location_country ORDER BY incident_count DESC LIMIT 1000",
+        "sql": "SELECT location_country, COUNT(*) AS incident_count FROM incidents WHERE crime_type = 'pig_butchering' AND location_country IS NOT NULL GROUP BY location_country ORDER BY incident_count DESC",
         "vega_lite": {
           "$schema": "https://vega-lite.github.io/schema/vega-lite/v5.json",
           "width": "container",
@@ -371,7 +416,7 @@ User query: "Show me where sex trafficking is reported around the world"
         "role": "primary",
         "title": "Reported incidents by region",
         "summary": "Read the shading to see which world regions report sex-trafficking incidents most often; hover a region for its value.",
-        "sql": "SELECT location_country, COUNT(*) AS incident_count FROM incidents WHERE crime_type = 'sex_trafficking' AND location_country IS NOT NULL GROUP BY location_country ORDER BY incident_count DESC LIMIT 1000",
+        "sql": "SELECT location_country, COUNT(*) AS incident_count FROM incidents WHERE crime_type = 'sex_trafficking' AND location_country IS NOT NULL GROUP BY location_country ORDER BY incident_count DESC",
         "vega_lite": {
           "$schema": "https://vega-lite.github.io/schema/vega-lite/v5.json",
           "width": "container",
