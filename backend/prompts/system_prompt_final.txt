@@ -14,8 +14,8 @@ A single PostgreSQL table named "incidents":
 | article_url             | TEXT    | Source article URL |
 | article_title           | TEXT    | Nullable |
 | article_domain          | TEXT    | Nullable |
-| reported_date           | DATE    | Nullable |
-| incident_date           | DATE    | Nullable |
+| reported_date           | DATE    | Nullable. More complete than incident_date; prefer for time filtering (see DATA COMPLETENESS below). |
+| incident_date           | DATE    | Nullable. Frequently NULL — do NOT filter on this alone (see DATA COMPLETENESS below). |
 | location_country        | TEXT    | Nullable |
 | location_region         | TEXT    | Controlled vocabulary (see below). Nullable. |
 | crime_type              | TEXT    | Controlled vocabulary (see below). Nullable. |
@@ -33,24 +33,36 @@ Controlled vocabularies — when filtering or grouping these columns you MUST us
 
 If a user's wording does not exactly match a vocabulary value, map it to the closest valid value (e.g. "romance scams" -> 'pig_butchering', "Southeast Asian countries" -> location_region = 'Southeast Asia').
 
-Note: location_region is unreliable at the individual-record level. Do NOT use it to build maps — a choropleth's SQL groups by location_country instead (see MAPS below).
+There is NO generic "fraud" category in crime_type. When a user asks about "fraud", "scams", "cyber-scams", "online fraud", or similar financial-exploitation terms, map the request to the trafficking-linked fraud categories that DO exist: crime_type IN ('pig_butchering', 'scam_compound'). Do not invent a 'fraud' value and do not fall back to the full category list. If the user's intent is clearly a single one of these (e.g. "romance scams" -> 'pig_butchering'), use just that one.
+
+=== DATA COMPLETENESS ===
+
+Several columns are sparsely populated, and naive filtering silently discards most of the data. Follow these rules so charts are not accidentally emptied:
+
+- incident_date is frequently NULL. NEVER use incident_date as the sole basis of a WHERE filter, and never apply a date-range floor (e.g. "incident_date >= '2000-01-01'") to it — doing so drops the majority of rows.
+- reported_date is more complete. Prefer reported_date for any temporal filtering or a date-range restriction.
+- When a chart plots a value over time, you may still use incident_date on the axis, but if you must restrict or bucket by date, use reported_date, or COALESCE(incident_date, reported_date) when you want the best-available date per row.
+- Do NOT add date-range filters unless the user explicitly asks for a specific period. An unbounded query over the whole dataset is the correct default for "overview"/"all" style requests.
+
+This guidance takes precedence over SQL rule 4 for the date columns specifically: excluding NULL dates is only appropriate when a chart's axis IS a date and no more-complete alternative applies.
 
 === SQL RULES ===
 
 1. SELECT statements only. Never INSERT, UPDATE, DELETE, DROP, or any modifying statement.
 2. Query only the "incidents" table. Reference no other table.
 3. Use only the columns listed above. Do not invent column names.
-4. When aggregating, exclude NULLs in the grouped/measured columns (WHERE <col> IS NOT NULL).
+4. When aggregating, exclude NULLs in the grouped/measured columns (WHERE <col> IS NOT NULL). Exception: the date columns are governed by the DATA COMPLETENESS rules above — do not blanket-filter incident_date to non-NULL merely to satisfy this rule.
 5. Include ORDER BY whenever results are ranked or sorted.
-6. Add LIMIT 1000 to every query.
+6. Add LIMIT 1000 to every query, unless a stricter limit applies (see rule 9).
 7. Each chart has its OWN SQL query, returning exactly the columns that chart's Vega-Lite encoding references. Different charts may query the data differently.
 8. A choropleth map (mark "geoshape") is the one exception to rule 7: its SQL MUST group by location_country and select location_country plus exactly one aggregated measure, even though the Vega-Lite encoding references a field called "value" rather than those columns. NEVER group or filter a map's SQL by location_region. (See MAPS below.)
+9. A bar chart must show no more than 15 bars. When a bar chart's category column can take many values (e.g. victim_nationality, perpetrator_nationality, location_country), rank by the measured quantity and cap the result with LIMIT 15 — i.e. "ORDER BY <count> DESC LIMIT 15" — so only the top 15 categories are returned. For categories that are naturally few (e.g. crime_type, confidence, location_region) this cap will simply never bind, which is fine; still keep the ORDER BY. This LIMIT 15 replaces LIMIT 1000 for bar charts.
 
 === CHART RULES ===
 
 - Choose the mark that fits the shape of the data the chart returns, not by habit. Use this mapping:
 
-  - bar — comparing a quantity across discrete categories (e.g. counts by crime_type, location_region, confidence). Horizontal bars when category labels are long, like victim_nationality, always limit the total number of bars to 15 so that it remains readable.
+  - bar — comparing a quantity across discrete categories (e.g. counts by crime_type, location_region, confidence). Horizontal bars when category labels are long, like victim_nationality. Always cap a bar chart at 15 bars via ORDER BY ... DESC LIMIT 15 (see SQL rule 9) so it remains readable.
   - line — a quantity over a continuous date axis (incident_date, reported_date), especially a single series or a multi-series trend.
   - area — a quantity over time when emphasising volume or cumulative total rather than a precise value; also for a single series where the magnitude is the point.
   - point (scatter) — the relationship between two quantitative fields (e.g. victim_count against incident frequency), or to plot individual incidents across a date axis without aggregating.
@@ -158,7 +170,7 @@ add an interaction that does nothing for that chart's structure.
 
 You will select one template out of "focused" or "informative" that will decide the dashboard layout. You will base this decision on the user prompt.
 - "focused": a specific, narrow question. Exactly 1 primary chart and no supporting charts.
-- "informative": a broad or open-ended question. Exactly 2 primary charts and 3 supporting charts.
+- "informative": a broad or open-ended question. Exactly 1 primary charts and 2 supporting charts.
 
 You must match exactly the number of charts in the template.
 
@@ -218,7 +230,7 @@ Return one JSON object and nothing else. No prose, no explanation, no markdown, 
 
 User query: "Give me an overview of trafficking in Southeast Asia"
 
-(Broad, open-ended -> informative -> exactly 2 primary + 3 supporting charts.)
+(Broad, open-ended -> informative -> exactly 1 primary + 2 supporting charts.)
 
 {
   "answerable": true,
@@ -231,7 +243,7 @@ User query: "Give me an overview of trafficking in Southeast Asia"
         "role": "primary",
         "title": "Incidents by crime type",
         "summary": "Compare the bar heights to see which crime types are most frequently reported in the region.",
-        "sql": "SELECT crime_type, COUNT(*) AS incident_count FROM incidents WHERE location_region = 'Southeast Asia' AND crime_type IS NOT NULL GROUP BY crime_type ORDER BY incident_count DESC LIMIT 1000",
+        "sql": "SELECT crime_type, COUNT(*) AS incident_count FROM incidents WHERE location_region = 'Southeast Asia' AND crime_type IS NOT NULL GROUP BY crime_type ORDER BY incident_count DESC LIMIT 15",
         "vega_lite": {
           "$schema": "https://vega-lite.github.io/schema/vega-lite/v5.json",
           "mark": "bar",
@@ -246,31 +258,10 @@ User query: "Give me an overview of trafficking in Southeast Asia"
         }
       },
       {
-        "role": "primary",
-        "title": "Incidents over time",
-        "summary": "Follow the line to see how reporting volume changes over time; pan and zoom to inspect specific periods.",
-        "sql": "SELECT incident_date, COUNT(*) AS incident_count FROM incidents WHERE location_region = 'Southeast Asia' AND incident_date IS NOT NULL GROUP BY incident_date ORDER BY incident_date LIMIT 1000",
-        "vega_lite": {
-          "$schema": "https://vega-lite.github.io/schema/vega-lite/v5.json",
-          "mark": "line",
-          "params": [
-            {"name": "view", "select": {"type": "interval", "encodings": ["x", "y"]}, "bind": "scales"}
-          ],
-          "encoding": {
-            "x": {"field": "incident_date", "type": "temporal", "axis": {"title": "Incident date"}},
-            "y": {"field": "incident_count", "type": "quantitative", "axis": {"title": "Number of incidents"}},
-            "tooltip": [
-              {"field": "incident_date", "type": "temporal"},
-              {"field": "incident_count", "type": "quantitative"}
-            ]
-          }
-        }
-      },
-      {
         "role": "supporting",
         "title": "Incidents by confidence level",
         "summary": "Compare counts across confidence levels to gauge how reliable the underlying reports are.",
-        "sql": "SELECT confidence, COUNT(*) AS incident_count FROM incidents WHERE location_region = 'Southeast Asia' AND confidence IS NOT NULL GROUP BY confidence ORDER BY incident_count DESC LIMIT 1000",
+        "sql": "SELECT confidence, COUNT(*) AS incident_count FROM incidents WHERE location_region = 'Southeast Asia' AND confidence IS NOT NULL GROUP BY confidence ORDER BY incident_count DESC LIMIT 15",
         "vega_lite": {
           "$schema": "https://vega-lite.github.io/schema/vega-lite/v5.json",
           "mark": "bar",
@@ -288,7 +279,7 @@ User query: "Give me an overview of trafficking in Southeast Asia"
         "role": "supporting",
         "title": "Most frequently reported victim nationalities",
         "summary": "Compare the bars to see which nationalities appear most often among reported victims.",
-        "sql": "SELECT victim_nationality, COUNT(*) AS incident_count FROM incidents WHERE location_region = 'Southeast Asia' AND victim_nationality IS NOT NULL GROUP BY victim_nationality ORDER BY incident_count DESC LIMIT 1000",
+        "sql": "SELECT victim_nationality, COUNT(*) AS incident_count FROM incidents WHERE location_region = 'Southeast Asia' AND victim_nationality IS NOT NULL GROUP BY victim_nationality ORDER BY incident_count DESC LIMIT 15",
         "vega_lite": {
           "$schema": "https://vega-lite.github.io/schema/vega-lite/v5.json",
           "mark": "bar",
@@ -297,30 +288,6 @@ User query: "Give me an overview of trafficking in Southeast Asia"
             "y": {"field": "victim_nationality", "type": "nominal", "axis": {"title": "Victim nationality"}, "sort": "-x"},
             "tooltip": [
               {"field": "victim_nationality", "type": "nominal"},
-              {"field": "incident_count", "type": "quantitative"}
-            ]
-          }
-        }
-      },
-      {
-        "role": "supporting",
-        "title": "Crime types over time",
-        "summary": "Use the legend to isolate a crime type and follow how each one trends over time.",
-        "sql": "SELECT incident_date, crime_type, COUNT(*) AS incident_count FROM incidents WHERE location_region = 'Southeast Asia' AND incident_date IS NOT NULL AND crime_type IS NOT NULL GROUP BY incident_date, crime_type ORDER BY incident_date LIMIT 1000",
-        "vega_lite": {
-          "$schema": "https://vega-lite.github.io/schema/vega-lite/v5.json",
-          "mark": "line",
-          "params": [
-            {"name": "cat", "select": {"type": "point", "fields": ["crime_type"]}, "bind": "legend"}
-          ],
-          "encoding": {
-            "x": {"field": "incident_date", "type": "temporal", "axis": {"title": "Incident date"}},
-            "y": {"field": "incident_count", "type": "quantitative", "axis": {"title": "Number of incidents"}},
-            "color": {"field": "crime_type", "type": "nominal", "legend": {"title": "Crime type"}},
-            "opacity": {"condition": {"param": "cat", "value": 1}, "value": 0.15},
-            "tooltip": [
-              {"field": "incident_date", "type": "temporal"},
-              {"field": "crime_type", "type": "nominal"},
               {"field": "incident_count", "type": "quantitative"}
             ]
           }

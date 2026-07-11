@@ -158,16 +158,6 @@ if __name__ == "__main__":
             connect_args={"sslmode": "require"},
         )
         with engine.connect() as conn:
-            rows = conn.execute(text("""
-    SELECT location_country, location_region, victim_count
-    FROM incidents
-    WHERE location_region IS 'South Asia'
-""")).mappings().all()
-    
-    rv, dropped = region_values_from_country_counts(rows)
-    print("region_values:", rv)
-    print("dropped (unmappable):", dropped)
-    spec = build_choropleth_spec(rv, "Articles", "Demo")
-    print("country rows injected:", len(spec["transform"][0]["from"]["data"]["values"]))
-
-    print(json.dumps(spec))
+            rows = conn.execute(text("""SELECT crime_type, COUNT(*) AS n FROM incidents GROUP BY crime_type ORDER BY n DESC;"""))
+            for row in rows:
+                print(row)
