@@ -153,9 +153,12 @@ def generate_validated_spec(query:str, schema=db_schema, MAX_RETRY:int=3):
 
         if not errors and result:
             try:
-                inject_data(result, engine)
-                print("INFO: validation + injection passed — returning spec")
-                return result, None                     
+                if result.get("answerable"):
+                    inject_data(result, engine)
+                    print("INFO: validation + injection passed — returning spec")
+                    return result, None  
+                else:
+                    return result, None                   
             except Exception as e:
                 errors = f"The generated SQL failed to execute: {e}"  
 
@@ -193,7 +196,7 @@ async def handle_query(query: QueryRequest) -> dict:
         raise HTTPException(status_code=422, detail={"errors": errors})
     if not spec:
         raise ValueError("Spec was empty")  
-
+    print(json.dumps(spec, indent=2))
     return {"spec": spec}
 
      
