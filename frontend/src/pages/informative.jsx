@@ -12,8 +12,6 @@ export default function Informative() {
   const primaries = charts.filter((c) => c.role === "primary");
   const supportives = charts.filter((c) => c.role === "supporting");
 
-  console.log(primaries)
-
   return (
     <div className="informative-div">
       <div className="metadata-div">
@@ -24,12 +22,10 @@ export default function Informative() {
       <div className="charts-div">
         <div className="primary-charts-div">
           <ChartCard chart={primaries[0]} fallbackTitle="Primary Chart One" />
-          {/* <ChartCard chart={primaries[1]} fallbackTitle="Primary Chart Two" /> */}
         </div>
         <div className="supportive-charts-div">
-          {/* <ChartCard chart={supportives[0]} fallbackTitle="Supporting Chart One" /> */}
-          <ChartCard chart={supportives[0]} fallbackTitle="Supporting Chart Two" />
-          <ChartCard chart={supportives[1]} fallbackTitle="Supporting Chart Three" />
+          <ChartCard chart={supportives[0]} fallbackTitle="Supporting Chart One" />
+          <ChartCard chart={supportives[1]} fallbackTitle="Supporting Chart Two" />
         </div>
       </div>
     </div>
