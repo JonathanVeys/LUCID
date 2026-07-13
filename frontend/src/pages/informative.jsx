@@ -3,7 +3,6 @@ import ChartCard from "../components/utils/Chart";
 import "../styles/informative.css";
 
 
-
 export default function Informative() {
   const location = useLocation();
   const visSpec = location.state?.vis_spec;
@@ -12,6 +11,8 @@ export default function Informative() {
   const charts = visSpec?.charts ?? [];
   const primaries = charts.filter((c) => c.role === "primary");
   const supportives = charts.filter((c) => c.role === "supporting");
+
+  console.log(primaries)
 
   return (
     <div className="informative-div">
@@ -27,8 +28,8 @@ export default function Informative() {
         </div>
         <div className="supportive-charts-div">
           {/* <ChartCard chart={supportives[0]} fallbackTitle="Supporting Chart One" /> */}
-          <ChartCard chart={supportives[1]} fallbackTitle="Supporting Chart Two" />
-          <ChartCard chart={supportives[2]} fallbackTitle="Supporting Chart Three" />
+          <ChartCard chart={supportives[0]} fallbackTitle="Supporting Chart Two" />
+          <ChartCard chart={supportives[1]} fallbackTitle="Supporting Chart Three" />
         </div>
       </div>
     </div>

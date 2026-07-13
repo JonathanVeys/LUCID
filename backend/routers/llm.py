@@ -12,6 +12,7 @@ from backend.services.inject import inject_data
 from backend.schema.introspect import load_schema, format_schema_for_prompt, format_vocab_for_prompt
 from backend.validation.validate import validate
 from backend.validation.component_validation.parse_json import parse_model_json
+from backend.services.spec_debug import print_spec_info
 
 
 import time
@@ -55,7 +56,7 @@ router = APIRouter(prefix="/api")
 
 #On backend boot, inject database information into system prompt
 
-_template = (PARENT_PATH / "prompts/system_prompt_final.txt").read_text(encoding="utf-8")
+_template = (PARENT_PATH / "prompts/system_prompt.txt").read_text(encoding="utf-8")
 SYSTEM_PROMPT = (
     _template
     .replace("DATABASE_SCHEMA", format_schema_for_prompt(engine))  
@@ -196,7 +197,7 @@ async def handle_query(query: QueryRequest) -> dict:
         raise HTTPException(status_code=422, detail={"errors": errors})
     if not spec:
         raise ValueError("Spec was empty")  
-    # print(json.dumps(spec, indent=2))
+    print_spec_info(spec)
     return {"spec": spec}
 
      
