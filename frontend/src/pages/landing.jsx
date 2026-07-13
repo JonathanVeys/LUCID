@@ -51,7 +51,7 @@ function Landing() {
                 <input 
                     type="text" 
                     className="prompt-input" 
-                    placeholder={"What do you want to learn about the data?"} 
+                    placeholder={"Ask about human trafficking incidents around the world."} 
                     value = {query}
                     onChange={(e) => setQuery(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
