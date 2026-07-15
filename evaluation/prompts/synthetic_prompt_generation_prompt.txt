@@ -1,0 +1,124 @@
+You are generating a benchmark test set for evaluating a natural-language-to-dashboard
+visualisation system. Your output will be used as the input prompts in an automated
+evaluation, so the prompts you write must be realistic, varied, and correctly labelled.
+
+=== THE SYSTEM UNDER TEST ===
+
+The system takes a user's natural-language question about a database of reported
+human-trafficking and related exploitation incidents, and generates a dashboard:
+one or more charts, each with a SQL query and a Vega-Lite specification.
+
+It selects one of two layouts based on the question:
+- "focused": a specific, narrow question -> 1 chart.
+- "informative": a broad or open-ended question -> 1 primary + 2 supporting charts.
+
+It can produce these chart types: bar, line, area, point, rect (heatmap), arc,
+geoshape (choropleth map).
+
+The system ONLY produces charts. It does not return text answers, lists of records,
+titles, URLs, or individual field values. Every prompt you generate must therefore be
+answerable as a CHART (see WHAT MAKES A GOOD PROMPT below).
+
+=== DATABASE SCHEMA ===
+
+The user can ask about the following fields. These are the ONLY fields available. Do
+NOT generate prompts that depend on any other field (there is no article id, article
+title, url, domain, or internal identifier that a user would query).
+
+{SCHEMA}
+
+=== TASK CATEGORY FOR THIS BATCH ===
+
+{CATEGORY_BLOCK}
+
+Every prompt you generate in this batch must exemplify this task category.
+
+=== WHAT MAKES A GOOD PROMPT (VISUALISABLE) ===
+
+Every prompt must be answerable with a chart — a count, a comparison across categories,
+a distribution, a trend over time, or a geographic pattern. Write questions about HOW
+MANY, WHICH, WHERE, the DISTRIBUTION of something, or a COMPARISON.
+
+Do NOT generate prompts whose honest answer is:
+- a single text value (e.g. "what is the summary of this incident?"),
+- a URL, article title, domain, or record identifier,
+- a raw list of individual records (e.g. "list the titles of articles about forced labour"),
+- a lookup of one specific record by id.
+
+These cannot be visualised and are out of scope for this system. A prompt that would
+be answered by a table of raw rows rather than a chart is NOT acceptable.
+
+=== YOUR TASK ===
+
+Generate exactly {N} prompts in this category, as a user would plausibly type them
+into the tool. Each prompt must be paired with ground-truth labels (see OUTPUT SCHEMA).
+
+Distribution requirements for this batch:
+- Exactly {N_VAGUE} prompts must use vague or imprecise language (set vague_language: true).
+- Exactly {N_SPELLING} prompts must contain spelling or typing errors (set spelling_errors: true).
+- Exactly {N_UNANSWERABLE} prompts must be unanswerable (set answerable: false).
+- Vary complexity across the full range; do not cluster all prompts at one level.
+- A prompt may carry more than one stressor.
+
+=== WHAT MAKES A PROMPT ANSWERABLE ===
+
+A prompt is ANSWERABLE if it can be addressed using the fields listed above, including
+via a reasonable reinterpretation (e.g. "demographics" -> victim_nationality).
+
+A prompt is UNANSWERABLE only if NO field and NO reasonable reinterpretation can
+address it — it asks for information the database simply does not contain. Examples of
+information NOT in the schema: victim ages, gender, rescue or prosecution outcomes,
+arrests, financial amounts, named individuals, trafficking routes, methods of recruitment.
+
+An unanswerable prompt must NOT be merely difficult, broad, or sparse. It must be
+genuinely unanswerable from the fields above. Do NOT label a prompt unanswerable just to
+meet a quota — if {N_UNANSWERABLE} is 0, generate no unanswerable prompts.
+
+For unanswerable prompts, set expected_layout to null and expected_charts to an empty list.
+
+=== LABELLING RULES ===
+
+- expected_layout is determined by the BREADTH of the prompt, not its task category.
+  A narrow, single-answer question is "focused". A broad, open-ended question that
+  needs several views is "informative".
+- expected_charts is the set of chart types that would be ACCEPTABLE for this prompt,
+  not a single correct answer. Include every type a competent designer might reasonably
+  choose. Choose marks by the shape of the answer, not by habit:
+    - bar: comparing a quantity across discrete categories (counts by crime type, region,
+      nationality, confidence).
+    - line / area: a quantity over time (trends by reported date).
+    - geoshape: a geographic distribution across countries or regions ("which countries",
+      "where", "map"). A ranking or lookup scoped to a single named place is NOT a map.
+    - rect (heatmap): a quantity across TWO categorical dimensions at once.
+    - arc: simple part-to-whole proportions, sparingly.
+    - point: ONLY the relationship between two quantitative fields, or plotting individual
+      incidents across a date axis. Do NOT default to point for ordinary count questions.
+  Most count/comparison questions are bar; do not over-use point.
+- complexity: 
+        0 — Direct, single operation, no conditions. One clear instruction with no filtering or qualification. "How many incidents are in the data?" / "What are the different crime types by count?"
+        1 — Single operation with one simple condition. The core task plus one filter or qualifier. "How many sex trafficking incidents are there?" / "Which country has the most forced labour cases?"
+        2 — Single operation with two conditions, or one condition plus a grouping. Two constraints combined, still one analytic step. "How many sex trafficking incidents were reported in Vietnam?" / "Which crime type is most common in Southeast Asia?"
+        3 — Operation requiring a qualifier that must be resolved, or a condition over a range. The question needs interpretation or spans a dimension before the task can run. "Which country has reported the most trafficking recently?" (recently must be resolved to a date range) / "What crime type is most common among Vietnamese victims?"
+        4 — Multi-condition question combining several constraints on the same task. Several filters and qualifiers stacked, all serving one analytic goal. "Among high-confidence reports, which region has the most sex trafficking incidents involving Vietnamese victims?"
+        5 — Compound question requiring multiple sequential steps, still within one task category. The answer depends on resolving one thing before the next — chained conditions or nested qualification — but it remains a single kind of analytic task. "For the countries that report the most forced labour, which of their most common victim nationalities also appears in scam-compound cases?"
+- vague_language means imprecise wording ("a lot of", "recently", "that region"), not
+  bad grammar.
+- spelling_errors means realistic typos, as a real user would make. The prompt must
+  still be recognisable.
+
+=== CONSTRAINTS ===
+
+- Write prompts as a real user would type them, not as formal queries.
+- Do NOT reference column names directly (a user would not know them).
+- Do NOT reference record ids, article titles, urls, or domains.
+- Do NOT generate prompts that are near-duplicates of one another.
+- Do NOT generate prompts that reference data not in the schema while labelling them
+  answerable.
+- Keep prompts to one or two sentences.
+- The subject matter is sensitive; write plainly and factually, without sensationalism.
+
+=== OUTPUT SCHEMA ===
+
+Return one JSON object matching this schema exactly. No prose, no markdown, no code fences.
+
+{OUTPUT_SCHEMA}

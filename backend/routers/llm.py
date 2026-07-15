@@ -84,7 +84,7 @@ def build_healing_prompt(errors: list[str]|list[ErrorDetails]|str) -> str:
         f"{bullets}"
     )
 
-def inference(query, temperature:float=1):
+def inference(query, temperature:float=1, model="gpt-4-turbo"):
     """
     API endpoint for prompting the model.
     Input:  query.query (str) — the model query
@@ -98,7 +98,7 @@ def inference(query, temperature:float=1):
     try:
         res = client.chat.completions.create(
             messages=query, 
-            model="gpt-4-turbo",
+            model=model,
             temperature=temperature
         )
     except Exception as e:
@@ -139,16 +139,20 @@ def evaluate_response(spec, schema=db_schema, debug:bool=False):
     else:
         return raw, None
 
-def generate_validated_spec(query:str, schema=db_schema, MAX_RETRY:int=3):
+def generate_validated_spec(query:str, schema=db_schema, MAX_RETRY:int=3, debug=True):
     '''
     A function for converting a query to a validated visualisation specification
     '''
-    print(f"INFO: generate_validated_spec started | query={query!r}")
+    start_time = time.perf_counter()
+    if debug:
+        print(f"INFO: generate_validated_spec started | query={query!r}")
     messages = build_initial_prompt(query)
+    attempts = []
     last_errors = None
 
     for attempt in range(MAX_RETRY + 1):
-        print(f"INFO: Inference attempt {attempt}" if attempt>0 else f"INFO: Initial inference")
+        if debug:
+            print(f"INFO: Inference attempt {attempt}" if attempt>0 else f"INFO: Initial inference")
         content = inference(messages)
         result, errors = evaluate_response(content, schema)
 
@@ -156,26 +160,43 @@ def generate_validated_spec(query:str, schema=db_schema, MAX_RETRY:int=3):
             try:
                 if result.get("answerable"):
                     inject_data(result, engine)
-                    print("INFO: validation + injection passed — returning spec")
-                    return result, None  
-                else:
-                    return result, None                   
+                    if debug:
+                        print("INFO: validation + injection passed — returning spec")
+    
+                end_time = time.perf_counter()
+                execution_time = end_time - start_time
+
+                attempts.append({"attempt": attempt, "outcome": "success", "error_type": None, "error_message": None, "inference_time":execution_time})
+                return result, None, attempts  
+
             except Exception as e:
                 errors = f"The generated SQL failed to execute: {e}"  
-
+        
         last_errors = errors
-        print(f"WARNING: attempt {attempt} failed: {last_errors}")
+
+        end_time = time.perf_counter()
+        execution_time = end_time - start_time
+        attempts.append({
+            "attempt": attempt,
+            "outcome": "fail",
+            "error_type": errors,
+            "error_message": str(errors),
+            "inference_time":execution_time
+        })
         messages.append({"role": "assistant", "content": content})
         messages.append({"role": "user", "content": build_healing_prompt(errors)}) 
 
-    return None, last_errors
+        if debug:
+            print(f"WARNING: attempt {attempt} failed: {last_errors}")
+
+    return None, last_errors, attempts
     
 @timing_val
 def generate_dashboard_spec(query:QueryRequest, schema=db_schema, MAX_RETRY: int = 3):
     '''
     A function that takes a validat 
     '''
-    spec, errors = generate_validated_spec(query.query, MAX_RETRY=MAX_RETRY)
+    spec, errors, _ = generate_validated_spec(query.query, MAX_RETRY=MAX_RETRY)
 
     if errors:
         return None, errors
