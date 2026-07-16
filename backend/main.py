@@ -19,6 +19,6 @@ app.include_router(
     query_router
 )
 
-@app.get("/")
+@app.get("/health")
 def root():
-    return {"message": "LUCID is running"}
+    return {"status": "ok"}

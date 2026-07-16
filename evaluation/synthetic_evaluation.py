@@ -21,7 +21,7 @@ result_rows = []
 
 counter = 0
 for idx, row in tqdm(PROMPTS.iterrows(), total=len(PROMPTS), desc="Processing prompts"):
-    if row["complexity"] not in [4,5]:
+    if row["complexity"] not in [5]:
         continue
     counter += 1
     if counter == 15:
@@ -53,7 +53,9 @@ for idx, row in tqdm(PROMPTS.iterrows(), total=len(PROMPTS), desc="Processing pr
         "n_charts": len(charts),
         "vis_spec": spec,     # keep the clean spec for judge scoring + examples
     })
-print(pd.DataFrame(attempt_rows))
-print(pd.DataFrame(result_rows))
+
+attempt_df = pd.DataFrame(attempt_rows)
+result_df = pd.DataFrame(result_rows)
+result_df.to_csv("evaluation/prompts/synthetic_prompts_results.csv", index=False)
 
     

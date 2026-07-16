@@ -4,7 +4,9 @@
 
 ## How to use it
 
-Type a question about the trafficking dataset into the box and press enter. LUCID interprets your question, decides how best to visualise the answer, and builds a dashboard of one or more interactive charts. Most questions take 15–30 seconds; complex ones may take a little longer while the system refines its answer. All of this info can be found at the **about** section in the top right of your page.
+Type a question about the trafficking dataset into the box and press enter. LUCID interprets your question, decides how best to visualise the answer, and builds a dashboard of one or more interactive charts. Most questions take 15–30 seconds; complex ones may take a little longer while the system refines its answer. 
+
+All of this info can be found at the **about** section in the top right of your page.
 
 ## What you can ask about
 
