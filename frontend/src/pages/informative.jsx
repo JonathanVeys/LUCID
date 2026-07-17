@@ -1,5 +1,7 @@
 import { useLocation } from "react-router-dom";
+import { useState } from "react";
 import ChartCard from "../components/utils/Chart";
+import SideBar from "../components/layout/side_panel/side_bar";
 import "../styles/informative.css";
 
 
@@ -12,6 +14,8 @@ export default function Informative() {
   const primaries = charts.filter((c) => c.role === "primary");
   const supportives = charts.filter((c) => c.role === "supporting");
 
+  const [ elementData, setElementData ] = useState(null)
+
   return (
     <div className="informative-div">
       <div className="metadata-div">
@@ -21,13 +25,15 @@ export default function Informative() {
 
       <div className="charts-div">
         <div className="primary-charts-div">
-          <ChartCard chart={primaries[0]} fallbackTitle="Primary Chart One" />
+          <ChartCard chart={primaries[0]} fallbackTitle="Primary Chart One" onSelect={setElementData}/>
         </div>
         <div className="supportive-charts-div">
-          <ChartCard chart={supportives[0]} fallbackTitle="Supporting Chart One" />
-          <ChartCard chart={supportives[1]} fallbackTitle="Supporting Chart Two" />
+          <ChartCard chart={supportives[0]} fallbackTitle="Supporting Chart One" onSelect={setElementData}/>
+          <ChartCard chart={supportives[1]} fallbackTitle="Supporting Chart Two" onSelect={setElementData}/>
         </div>
       </div>
+      <SideBar elementData={elementData}/>
+      {console.log(elementData)}
     </div>
   );
 }

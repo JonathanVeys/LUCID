@@ -1,11 +1,21 @@
 .focused-div {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     height: 100%;
     overflow: hidden;          
     box-sizing: border-box;
 
+
+
     color: white;
+}
+
+.dashboard-div {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    height: 100%;
+    min-width: 0;           
 }
 
 .primary-chart {
@@ -15,3 +25,5 @@
     min-height: 0;
     gap: 10px;
 }
+
+

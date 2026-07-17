@@ -4,17 +4,15 @@ import json
 from backend.services.geo_tables import GEO, REGION_TO_IDS
 
 
-# def inject_data(spec:dict, engine:Engine):
-#     with engine.connect() as conn:
-#         for chart in spec["vis_spec"]["charts"]:
-#             result = conn.exec_driver_sql(str(chart["sql"]))
-#             rows = [dict(row._mapping) for row in result]
-#             chart["vega_lite"]["data"] = {"values":rows}
-#     return spec
 
-
-def inject_chart(chart:dict, data):
-    chart["vega_lite"]["data"] = {"values":data}
+def inject_chart(chart, rows):
+    vl = chart["vega_lite"]
+    label_field = chart.get("label_field")  
+    for row in rows:
+        if label_field and label_field in row:
+            row["label"] = row[label_field]   
+       
+    vl["data"] = {"values": rows}
     return chart
 
 

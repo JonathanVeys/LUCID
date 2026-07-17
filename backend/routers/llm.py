@@ -59,9 +59,10 @@ router = APIRouter(prefix="/api")
 _template = (PARENT_PATH / "prompts/system_prompt.txt").read_text(encoding="utf-8")
 SYSTEM_PROMPT = (
     _template
-    .replace("DATABASE_SCHEMA", format_schema_for_prompt(engine))  
-    .replace("COLUMN_INFO", format_vocab_for_prompt(engine))
+    .replace("{DATABASE_SCHEMA}", format_schema_for_prompt(engine))  
+    .replace("{COLUMN_INFO}", format_vocab_for_prompt(engine))
 )
+
 
 def build_initial_prompt(prompt: str) -> list[dict]:
     return [
@@ -116,8 +117,6 @@ def inference(query, temperature:float=1, model="gpt-4-turbo"):
 
 
 
-
-
 def evaluate_response(spec, schema=db_schema, debug:bool=False):
     '''
     A function for evaluating a visualisation specification against a predefined schema
@@ -139,6 +138,7 @@ def evaluate_response(spec, schema=db_schema, debug:bool=False):
     else:
         return raw, None
 
+@timing_val
 def generate_validated_spec(query:str, schema=db_schema, MAX_RETRY:int=3, debug=True):
     '''
     A function for converting a query to a validated visualisation specification
@@ -188,21 +188,8 @@ def generate_validated_spec(query:str, schema=db_schema, MAX_RETRY:int=3, debug=
 
         if debug:
             print(f"WARNING: attempt {attempt} failed: {last_errors}")
+    return {"answerable":False, "reason":last_errors}, last_errors, attempts
 
-    return None, last_errors, attempts
-    
-@timing_val
-def generate_dashboard_spec(query:QueryRequest, schema=db_schema, MAX_RETRY: int = 3):
-    '''
-    A function that takes a validat 
-    '''
-    spec, errors, _ = generate_validated_spec(query.query, MAX_RETRY=MAX_RETRY)
-
-    if errors:
-        return None, errors
-    # if "vis_spec" in spec.keys():  #type: ignore
-        # spec = inject_data(spec, engine)         #type: ignore
-    return spec, None
 
 
 @router.post("/generate")
@@ -213,12 +200,8 @@ async def handle_query(query: QueryRequest) -> dict:
     Output: dict with the model's response text
     Raises: HTTPException on upstream or internal failure
     """
-    spec, errors = generate_dashboard_spec(query)
-    if errors:
-        raise HTTPException(status_code=422, detail={"errors": errors})
-    if not spec:
-        raise ValueError("Spec was empty")  
-    print_spec_info(spec)
+    spec, _, _ = generate_validated_spec(query.query)
+
     return {"spec": spec}
 
      

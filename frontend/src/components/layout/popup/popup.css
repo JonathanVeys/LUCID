@@ -9,15 +9,15 @@
 }
 
 .popup-content {
-  background-color: #2a1a42;        /* lighter than the page's #1a0a2e — same purple family */
-  color: #f0eaf5;                    /* light text, since the surface is now dark */
-  border: 1px solid rgba(255, 255, 255, 0.12);   /* subtle edge to define the card */
-  border-radius: 16px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);     /* depth — this is what makes it "float" */
-  padding: 2rem;
-  max-width: 70%;
-  max-height: 80%;
-  overflow-y: auto;
+    background-color: #2a1a42;        /* lighter than the page's #1a0a2e — same purple family */
+    color: #f0eaf5;                    /* light text, since the surface is now dark */
+    border: 1px solid rgba(255, 255, 255, 0.12);   /* subtle edge to define the card */
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);     /* depth — this is what makes it "float" */
+    padding: 2rem;
+    max-width: 70%;
+    max-height: 80%;
+    overflow-y: auto;
 }
 
 .popup-close {

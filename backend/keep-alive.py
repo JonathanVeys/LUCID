@@ -7,7 +7,7 @@ INTERVAL = 600
 
 while True:
     try:
-        r = requests.get(URL, timeout=30)
+        r = requests.get(URL, timeout=120)
         print(f"{datetime.now():%H:%M:%S} - pinged, status {r.status_code}")
     except Exception as e:
         print(f"{datetime.now():%H:%M:%S} - ping failed: {e}")
