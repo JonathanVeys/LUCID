@@ -10,7 +10,7 @@ Adjust imports to your layout.
 
 import pytest
 
-from backend.validation.validate import validate
+from backend.validation.validate import evaluate_response
 from backend.tests.sample_specs import (
     VALID, BAD_ENUM, NO_CHARTS, BAD_SYNTAX,
     BAD_COLUMN, BAD_TABLE, NOT_SELECT, MIXED,
@@ -19,7 +19,7 @@ from backend.tests.sample_specs import (
 
 class TestValidationPipeline:
     def test_valid_spec_passes(self, schema):
-        spec, errors = validate(VALID, schema)
+        spec, errors = evaluate_response(VALID, schema)
         assert errors is None
         assert spec is not None
 
@@ -32,14 +32,14 @@ class TestValidationPipeline:
         (NOT_SELECT, "non-SELECT statement"),
     ])
     def test_broken_spec_is_caught(self, schema, raw_spec, label):
-        spec, errors = validate(raw_spec, schema)
+        spec, errors = evaluate_response(raw_spec, schema)
         assert errors, f"expected errors for: {label}"
         assert spec is None
 
     def test_mixed_collects_multiple_errors(self, schema):
         """If validate collects all errors (not fail-fast on charts),
         the mixed spec's two bad charts should both be reported."""
-        spec, errors = validate(MIXED, schema)
+        spec, errors = evaluate_response(MIXED, schema)
         assert errors
         assert spec is None
         # If you implemented per-chart attribution + collect-all, assert >1 error:

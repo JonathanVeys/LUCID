@@ -7,7 +7,7 @@ from tqdm import tqdm
 from evaluation.table_schema import PromptTableSchema, PromptCategory
 from evaluation.prompt_descriptions import CATEGORY_DEFS
 from backend.routers.llm import inference, db_schema
-from backend.validation.component_validation.parse_json import parse_model_json
+from backend.validation.component_validation.parse_model_response import parse_model_response
 
 
 N_PROMPTS = 25

@@ -2,6 +2,7 @@ from sqlalchemy import Engine, create_engine
 import json
 
 from backend.services.geo_tables import GEO, REGION_TO_IDS
+from backend.errors.validation_error import ValidationError
 
 
 
@@ -53,7 +54,8 @@ def inject_choropleth_data(chart, rows, country_key="location_country"):
 
 
 
-def inject_data(spec:dict, engine:Engine):
+def inject_data(spec:dict, engine:Engine) -> tuple[dict, list[ValidationError]]:
+    err = []
     with engine.connect() as conn:
         for chart in spec["vis_spec"]["charts"]:
             result = conn.exec_driver_sql(str(chart["sql"]))
@@ -67,7 +69,7 @@ def inject_data(spec:dict, engine:Engine):
             else:
                 chart = inject_chart(chart, rows)
 
-    return spec
+    return spec, err
     
 
 if __name__ == "__main__":

@@ -4,39 +4,15 @@ from pydantic_core import ErrorDetails
 from dotenv import load_dotenv
 from openai import OpenAI
 import os
-import json
 from pathlib import Path
 from sqlalchemy import create_engine
-
-from backend.services.inject import inject_data
-from backend.schema.introspect import load_schema, format_schema_for_prompt, format_vocab_for_prompt
-from backend.validation.validate import validate
-from backend.validation.component_validation.parse_json import parse_model_json
-from backend.services.spec_debug import print_spec_info
-
-
 import time
 import functools
 
-def timing_val(func):
-    """Decorator that measures execution time and returns the function's value."""
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        start_time = time.perf_counter()
-        
-        # Execute the original function and store its output
-        result = func(*args, **kwargs)
-        
-        end_time = time.perf_counter()
-        execution_time = end_time - start_time
-        
-        print(f"Function '{func.__name__}' took {execution_time:.6f} seconds to execute.")
-        
-        # Return the original value so the program can continue as expected
-        return result
-    return wrapper
-
-
+from backend.services.inject import inject_data
+from backend.schema.introspect import load_schema, format_schema_for_prompt, format_vocab_for_prompt
+from backend.validation.validate import evaluate_response
+from backend.validation.component_validation.parse_model_response import parse_model_response
 
 
 load_dotenv()
@@ -117,77 +93,52 @@ def inference(query, temperature:float=1, model="gpt-4-turbo"):
 
 
 
-def evaluate_response(spec, schema=db_schema, debug:bool=False):
-    '''
-    A function for evaluating a visualisation specification against a predefined schema
-    '''
-    raw, errors = parse_model_json(spec)
-    if errors:  #Check for json syntax errors
-        return None, errors
-    if not raw:  #Ensure that the model has returned some raw spec
-        return None, ["Visualisation specification was empty or unparsable output."]
-    if "answerable" not in raw.keys():  #Check if the answerable field is present
-        return None, ["Response must include 'answerable' field"]
-    if not raw["answerable"]:   #Check if the model has flagged the response as unanswerable
-        return raw, None
-    if "vis_spec" not in raw.keys(): #Check that the model contains a vis_spec
-        return None, ["Response must include 'vis_spec' field"]
-    spec, errors = validate(raw["vis_spec"], schema)    #Return syntax and semantic errors from the vis_spec
-    if errors:
-        return None, errors
-    else:
-        return raw, None
 
-@timing_val
-def generate_validated_spec(query:str, schema=db_schema, MAX_RETRY:int=3, debug=True):
+def _generate_validated_spec(query:str, db_schema=db_schema, MAX_RETRY=3):
     '''
-    A function for converting a query to a validated visualisation specification
+    
     '''
     start_time = time.perf_counter()
-    if debug:
-        print(f"INFO: generate_validated_spec started | query={query!r}")
+    print(f"INFO: generate_validated_spec started | query={query!r}")
+
     messages = build_initial_prompt(query)
     attempts = []
-    last_errors = None
+    last_errors = []
 
-    for attempt in range(MAX_RETRY + 1):
-        if debug:
-            print(f"INFO: Inference attempt {attempt}" if attempt>0 else f"INFO: Initial inference")
+    for attempt in range(MAX_RETRY+1):
+        print(f"INFO: Inference attempt {attempt}" if attempt>0 else f"INFO: Initial inference")
         content = inference(messages)
-        result, errors = evaluate_response(content, schema)
+        spec, err = parse_model_response(content)
+        if not err and spec:
+            ok, err = evaluate_response(spec, db_schema)
+            if ok:
+                if spec.get("answerable"):
+                    spec, err = inject_data(spec, engine)
 
-        if not errors and result:
-            try:
-                if result.get("answerable"):
-                    inject_data(result, engine)
-                    if debug:
-                        print("INFO: validation + injection passed — returning spec")
-    
-                end_time = time.perf_counter()
-                execution_time = end_time - start_time
+                if not err:
+                    end_time = time.perf_counter()
+                    execution_time = end_time - start_time
 
-                attempts.append({"attempt": attempt, "outcome": "success", "error_type": None, "error_message": None, "inference_time":execution_time})
-                return result, None, attempts  
-
-            except Exception as e:
-                errors = f"The generated SQL failed to execute: {e}"  
-        
-        last_errors = errors
+                    attempts.append({"attempt": attempt, "outcome": "success", "error_type": None, "error_message": None, "inference_time":execution_time})
+                    return spec, None, attempts  
+            
+        last_errors=err
 
         end_time = time.perf_counter()
         execution_time = end_time - start_time
         attempts.append({
             "attempt": attempt,
             "outcome": "fail",
-            "error_type": errors,
-            "error_message": str(errors),
+            "error_type": last_errors[0].type,
+            "error_message": str(err[0]),
             "inference_time":execution_time
         })
-        messages.append({"role": "assistant", "content": content})
-        messages.append({"role": "user", "content": build_healing_prompt(errors)}) 
 
-        if debug:
-            print(f"WARNING: attempt {attempt} failed: {last_errors}")
+        messages.append({"role": "assistant", "content": content})
+        messages.append({"role": "user", "content": build_healing_prompt(str(err[0]))}) 
+
+        print(f"WARNING: attempt {attempt} failed | Type: {last_errors[0].type} | Details: {last_errors[0].details}")
+
     return {"answerable":False, "reason":last_errors}, last_errors, attempts
 
 
@@ -200,8 +151,8 @@ async def handle_query(query: QueryRequest) -> dict:
     Output: dict with the model's response text
     Raises: HTTPException on upstream or internal failure
     """
-    spec, _, _ = generate_validated_spec(query.query)
+    spec, _, attempts = _generate_validated_spec(query.query)
 
-    return {"spec": spec}
+    return {"spec": spec, "attempts":attempts}
 
      
