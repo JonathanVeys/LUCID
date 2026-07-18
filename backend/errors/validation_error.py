@@ -3,7 +3,7 @@ from enum import Enum
 from dataclasses import dataclass
 
 
-ErrorType = Literal["SQL Syntax", "JSON Syntax", "VisSpec Schema", "Chart Error", "SQL Semantic"]
+ErrorType = Literal["SQL Syntax", "JSON Syntax", "VisSpec Schema", "Chart Error", "SQL Semantic", "SQL Execution"]
 
 @dataclass
 class ValidationError():

@@ -38,7 +38,7 @@ This guidance takes precedence over SQL rule 4 for the date columns specifically
 5. Include ORDER BY whenever results are ranked or sorted.
 6. Do NOT add a LIMIT clause to a query. The only exception is the bar-chart cap in rule 9. (The dataset is small, so unbounded aggregate queries are safe, and a blanket LIMIT can silently truncate a time series by cutting off its later dates.)
 7. Each chart has its OWN SQL query, returning exactly the columns that chart's Vega-Lite encoding references. Different charts may query the data differently.
-8. A choropleth map (mark "geoshape") is the one exception to rule 7: its SQL MUST group by location_country and select location_country plus exactly one aggregated measure, even though the Vega-Lite encoding references a field called "value" rather than those columns. NEVER group or filter a map's SQL by location_region. (See MAPS below.)
+8. A choropleth map (mark "geoshape") is the one exception to rule 7: its SQL MUST group by location_country and select location_country plus exactly one aggregated measure, even though the Vega-Lite encoding references a field called "value" rather than those columns. NEVER GROUP BY location_region in a map's SQL — filtering by location_region in the WHERE clause is fine, and is the correct way to scope a map to a particular part of the world. (See MAPS below.)
 9. A bar chart must show no more than 15 bars. When a bar chart's category column can take many values (e.g. victim_nationality, perpetrator_nationality, location_country), rank by the measured quantity and cap the result with LIMIT 15 — i.e. "ORDER BY <count> DESC LIMIT 15" — so only the top 15 categories are returned. For categories that are naturally few (e.g. crime_type, confidence, location_region) this cap will simply never bind, which is fine; still keep the ORDER BY. LIMIT 15 on bar charts is the ONLY LIMIT clause you should ever add to any query.
 
 === CHART RULES ===
@@ -55,6 +55,7 @@ This guidance takes precedence over SQL rule 4 for the date columns specifically
 
 Bar and line are reliable defaults, but treat them as options among several: when a chart compares two measures, crosses two categories, shows individual records, or shows a geographic distribution, prefer the mark above that matches that shape. In an "informative" dashboard especially, the charts should not all be bars — vary the marks to match what each chart is actually showing.
   - Every chart's vega_lite block must be COMPLETE and self-contained: include "$schema", "mark", and a full "encoding" with an explicit "type" for every field, an axis "title" on every positional axis, and a "tooltip". Do not leave any required Vega-Lite property implicit or for later completion. The ONLY thing added after you respond is row data (see the "data" rule below); everything else about how the chart looks and behaves must be present in your output.
+  - The "vega_lite" block must contain ONLY valid Vega-Lite properties. Fields that configure this pipeline rather than the renderer — "sql", "label_field", "geo_granularity" — belong at CHART level, as siblings of "vega_lite", never inside it.
   - Every encoded field must be a column returned by that chart's SQL. The single exception is the choropleth "value" field, which is produced during injection (see MAPS).
   - Match encoding types to data: DATE -> "temporal", INTEGER/counts -> "quantitative", text categories -> "nominal".
   - Give every axis a descriptive title.
@@ -82,7 +83,6 @@ A map chart's "vega_lite" block must reproduce this structure. Only "title" (if 
     "url": "https://cdn.jsdelivr.net/npm/vega-datasets@2/data/world-110m.json",
     "format": {"type": "topojson", "feature": "countries"}
   },
-  "geo_granularity": "country" or "region",
   "transform": [
     {
       "lookup": "id",
@@ -103,7 +103,7 @@ A map chart's "vega_lite" block must reproduce this structure. Only "title" (if 
       "field": "value",
       "type": "quantitative",
       "scale": {"scheme": "yelloworangered", "type":"log"},
-      "legend": {"title": "<a descriptive label for the measure, e.g. Reported incidents>"}
+      "legend": {"title": "Reported incidents"}
     },
     "tooltip": [
       {"field": "label", "type": "nominal", "title": "Location"},
@@ -125,10 +125,11 @@ A map chart's "vega_lite" block must reproduce this structure. Only "title" (if 
 }
 
 Rules specific to a map chart:
-- Reproduce "projection", "data" (the topology url and format), the "transform" lookup shape, "mark", and "config" EXACTLY as shown above. These never change between maps. Do not alter the url, the "feature": "countries" value, the "lookup": "id" / "key": "id" keys, or the "fields": ["value"] entry.
+- Reproduce "projection", "data" (the topology url and format), the "transform" lookup shape, "mark", and "config" EXACTLY as shown above. These never change between maps. Do not alter the url, the "feature": "countries" value, the "lookup": "id" / "key": "id" keys, or the "fields": ["value", "label"] entry.
 - Leave "transform[0].from.data.values" as an empty array []. It is the only thing injected.
-- The encoding's "color.field" and the tooltip field are "value" — this is the measure produced during injection, NOT a column your SQL selects directly. Do not rename it to your SQL's column name.
-- Set "geo_granularity" to one of:
+- The encoding's "color.field" and the tooltip "value" field are "value" — this is the measure produced during injection, NOT a column your SQL selects directly. Do not rename it to your SQL's column name. The tooltip's "label" field is likewise produced during injection.
+- Give the legend title a short descriptive label for the measure being shaded (e.g. "Reported incidents", "Reported victims").
+- Every map chart MUST include a "geo_granularity" field at CHART level — a sibling of "sql" and "label_field", NOT inside "vega_lite". Set it to one of:
     "country" — shade individual countries. Use for a focused, country-level question.
     "region"  — shade whole world regions at once (regions are derived from countries during injection, not from the location_region column). Use for a broad, at-a-glance geographic overview.
 - The SQL still groups by location_country and selects location_country plus one aggregated measure (SQL rule 8), for BOTH granularities. Region shading is computed from those country rows after the query runs.
@@ -148,7 +149,7 @@ And every chart MUST show them visually. Non-map charts use opacity:
 
   "opacity": {
     "condition": [
-      {"param": "select", "empty": false, "value": 1},
+      {"param": "select", "empty": false, "value": 1}
     ],
     "value": 0.3
   }
@@ -211,18 +212,19 @@ Return one JSON object and nothing else. No prose, no explanation, no markdown, 
     "title": "Dashboard title based on the user query",
     "description": "One sentence stating what question the dashboard is built to explore",
     "layout_mode": "focused" or "informative",
-    "label_field": "...",
     "charts": [
       {
         "role": "primary" or "supporting",
         "title": "Chart title",
         "summary": "One sentence on what to look for in this chart",
         "sql": "THE SQL QUERY FOR THIS CHART",
+        "label_field": "...",
+        "geo_granularity": "country" or "region"  (MAP CHARTS ONLY — omit for all other marks),
         "vega_lite": {
           "$schema": "https://vega-lite.github.io/schema/vega-lite/v5.json",
           "mark": "...",
           "params": [...],
-          "encoding": { ... },
+          "encoding": { ... }
         }
       }
     ]
@@ -353,7 +355,7 @@ User query: "Give me an overview of trafficking in Southeast Asia"
 
 User query: "Which countries report the most pig butchering scams?"
 
-(A geographic "which countries" question, narrow in intent -> focused -> exactly 1 chart, a country-level choropleth. The vega_lite reproduces the MAPS structure exactly, with "transform[0].from.data.values" left as [] for injection and the SQL grouped by location_country.)
+(A geographic "which countries" question, narrow in intent -> focused -> exactly 1 chart, a country-level choropleth. The vega_lite reproduces the MAPS structure exactly, with "transform[0].from.data.values" left as [] for injection and the SQL grouped by location_country. Note that "geo_granularity" sits alongside "sql" and "label_field", NOT inside "vega_lite".)
 
 {
   "answerable": true,
@@ -368,6 +370,7 @@ User query: "Which countries report the most pig butchering scams?"
         "summary": "Read the shading to compare which countries report pig-butchering incidents most often; hover a country for its value.",
         "sql": "SELECT location_country, COUNT(*) AS incident_count FROM incidents WHERE crime_type = 'pig_butchering' AND location_country IS NOT NULL GROUP BY location_country ORDER BY incident_count DESC",
         "label_field":"location_country",
+        "geo_granularity": "country",
         "vega_lite": {
           "$schema": "https://vega-lite.github.io/schema/vega-lite/v5.json",
           "width": "container",
@@ -377,7 +380,6 @@ User query: "Which countries report the most pig butchering scams?"
             "url": "https://cdn.jsdelivr.net/npm/vega-datasets@2/data/world-110m.json",
             "format": {"type": "topojson", "feature": "countries"}
           },
-          "geo_granularity": "country",
           "transform": [
             {
               "lookup": "id",
@@ -392,31 +394,31 @@ User query: "Which countries report the most pig butchering scams?"
               {"name": "select", "select": "point"},
               {"name": "highlight", "select": {"type": "point", "on": "pointerover"}}
             ],
-        "mark": {"type": "geoshape", "stroke": "black", "strokeWidth": 0.4},
-        "encoding": {
-          "color": {
-            "field": "value",
-            "type": "quantitative",
-            "scale": {"scheme": "yelloworangered", "type":"log"},
-            "legend": {"title": "<a descriptive label for the measure, e.g. Reported incidents>"}
-          },
-          "tooltip": [
-            {"field": "label", "type": "nominal", "title": "Location"},
-            {"field": "value", "type": "quantitative", "title": "Reported incidents"}
-          ],
-          "fillOpacity": {
-            "condition": {"param": "select", "value": 1},
-            "value": 0.3
-          },
-          "strokeWidth": {
-            "condition": [
-              {"param": "select", "empty": false, "value": 2},
-              {"param": "highlight", "empty": false, "value": 1}
+          "mark": {"type": "geoshape", "stroke": "black", "strokeWidth": 0.4},
+          "encoding": {
+            "color": {
+              "field": "value",
+              "type": "quantitative",
+              "scale": {"scheme": "yelloworangered", "type":"log"},
+              "legend": {"title": "Reported incidents"}
+            },
+            "tooltip": [
+              {"field": "label", "type": "nominal", "title": "Location"},
+              {"field": "value", "type": "quantitative", "title": "Reported incidents"}
             ],
-            "value": 0.5
-          }
-        },
-        "config": {"view": {"stroke": null}, "mark": {"invalid": null}}
+            "fillOpacity": {
+              "condition": {"param": "select", "value": 1},
+              "value": 0.3
+            },
+            "strokeWidth": {
+              "condition": [
+                {"param": "select", "empty": false, "value": 2},
+                {"param": "highlight", "empty": false, "value": 1}
+              ],
+              "value": 0.5
+            }
+          },
+          "config": {"view": {"stroke": null}, "mark": {"invalid": null}}
         }
       }
     ]
@@ -442,6 +444,7 @@ User query: "Show me where sex trafficking is reported around the world"
         "summary": "Read the shading to see which world regions report sex-trafficking incidents most often; hover a region for its value.",
         "sql": "SELECT location_country, COUNT(*) AS incident_count FROM incidents WHERE crime_type = 'sex_trafficking' AND location_country IS NOT NULL GROUP BY location_country ORDER BY incident_count DESC",
         "label_field":"location_country",
+        "geo_granularity": "region",
         "vega_lite": {
           "$schema": "https://vega-lite.github.io/schema/vega-lite/v5.json",
           "width": "container",
@@ -451,7 +454,6 @@ User query: "Show me where sex trafficking is reported around the world"
             "url": "https://cdn.jsdelivr.net/npm/vega-datasets@2/data/world-110m.json",
             "format": {"type": "topojson", "feature": "countries"}
           },
-          "geo_granularity": "region",
           "transform": [
             {
               "lookup": "id",
@@ -472,7 +474,7 @@ User query: "Show me where sex trafficking is reported around the world"
               "field": "value",
               "type": "quantitative",
               "scale": {"scheme": "yelloworangered", "type":"log"},
-              "legend": {"title": "<a descriptive label for the measure, e.g. Reported incidents>"}
+              "legend": {"title": "Reported incidents"}
             },
             "tooltip": [
               {"field": "label", "type": "nominal", "title": "Location"},

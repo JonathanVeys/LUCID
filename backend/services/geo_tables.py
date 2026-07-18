@@ -1,115 +1,39 @@
-"""Frozen geo lookup tables. Generated once from the fixed set of DB
-location_country strings. Regenerate ONLY if the dataset is re-extracted.
-No runtime dependency on pycountry."""
+import json, logging
+import country_converter as coco
+logging.getLogger('country_converter').setLevel(logging.CRITICAL)
 
-# DB location_country string -> {id: world-110m numeric id or None, region: name or None}
-GEO = {
-    'Albania': {'id': 8, 'region': 'Europe'},
-    'Argentina': {'id': 32, 'region': 'South America'},
-    'Armenia': {'id': 51, 'region': 'Middle East'},
-    'Australia': {'id': 36, 'region': 'Pacific'},
-    'Austria': {'id': 40, 'region': 'Europe'},
-    'Bahamas': {'id': 44, 'region': 'Central America'},
-    'Bahrain': {'id': 48, 'region': 'Middle East'},
-    'Bangladesh': {'id': 50, 'region': 'South Asia'},
-    'Belgium': {'id': 56, 'region': 'Europe'},
-    'Brazil': {'id': 76, 'region': 'South America'},
-    'Cambodia': {'id': 116, 'region': 'Southeast Asia'},
-    'Canada': {'id': 124, 'region': 'North America'},
-    'China': {'id': 156, 'region': 'East Asia'},
-    'Colombia': {'id': 170, 'region': 'South America'},
-    'Costa Rica': {'id': 188, 'region': 'Central America'},
-    'Cyprus': {'id': 196, 'region': 'Europe'},
-    'Democratic Republic of Congo': {'id': 180, 'region': 'Central Africa'},
-    'Democratic Republic of the Congo': {'id': 180, 'region': 'Central Africa'},
-    'Denmark': {'id': 208, 'region': 'Europe'},
-    'Eswatini': {'id': 748, 'region': 'Southern Africa'},
-    'Europe': {'id': None, 'region': 'Europe'},
-    'European Union': {'id': None, 'region': 'Europe'},
-    'Federated States of Micronesia': {'id': 583, 'region': 'Pacific'},
-    'Finland': {'id': 246, 'region': 'Europe'},
-    'France': {'id': 250, 'region': 'Europe'},
-    'Germany': {'id': 276, 'region': 'Europe'},
-    'Ghana': {'id': 288, 'region': 'West Africa'},
-    'Greece': {'id': 300, 'region': 'Europe'},
-    'Guatemala': {'id': 320, 'region': 'Central America'},
-    'Guyana': {'id': 328, 'region': 'South America'},
-    'Hungary': {'id': 348, 'region': 'Europe'},
-    'Iceland': {'id': 352, 'region': 'Europe'},
-    'India': {'id': 356, 'region': 'South Asia'},
-    'Indonesia': {'id': 360, 'region': 'Southeast Asia'},
-    'Iraq': {'id': 368, 'region': 'Middle East'},
-    'Ireland': {'id': 372, 'region': 'Europe'},
-    'Israel': {'id': 376, 'region': 'Middle East'},
-    'Italy': {'id': 380, 'region': 'Europe'},
-    'Jamaica': {'id': 388, 'region': 'Central America'},
-    'Japan': {'id': 392, 'region': 'East Asia'},
-    'Jordan': {'id': 400, 'region': 'Middle East'},
-    'Kuwait': {'id': 414, 'region': 'Middle East'},
-    'Laos': {'id': 418, 'region': 'Southeast Asia'},
-    'Latvia': {'id': 428, 'region': 'Europe'},
-    'Lebanon': {'id': 422, 'region': 'Middle East'},
-    'Liberia': {'id': 430, 'region': 'West Africa'},
-    'Libya': {'id': 434, 'region': 'Middle East'},
-    'Madagascar': {'id': 450, 'region': 'East Africa'},
-    'Malawi': {'id': 454, 'region': 'East Africa'},
-    'Malaysia': {'id': 458, 'region': 'Southeast Asia'},
-    'Mali': {'id': 466, 'region': 'West Africa'},
-    'Malta': {'id': 470, 'region': 'Europe'},
-    'Mexico': {'id': 484, 'region': 'Central America'},
-    'Multiple Caribbean nations': {'id': None, 'region': 'Central America'},
-    'Myanmar': {'id': 104, 'region': 'Southeast Asia'},
-    'Nepal': {'id': 524, 'region': 'South Asia'},
-    'Netherlands': {'id': 528, 'region': 'Europe'},
-    'New Zealand': {'id': 554, 'region': 'Pacific'},
-    'Nigeria': {'id': 566, 'region': 'West Africa'},
-    'North Korea': {'id': 408, 'region': 'East Asia'},
-    'North Macedonia': {'id': 807, 'region': 'Europe'},
-    'Pakistan': {'id': 586, 'region': 'South Asia'},
-    'Papua New Guinea': {'id': 598, 'region': 'Pacific'},
-    'Paraguay': {'id': 600, 'region': 'South America'},
-    'Peru': {'id': 604, 'region': 'South America'},
-    'Philippines': {'id': 608, 'region': 'Southeast Asia'},
-    'Portugal': {'id': 620, 'region': 'Europe'},
-    'Qatar': {'id': 634, 'region': 'Middle East'},
-    'Russia': {'id': 643, 'region': 'Europe'},
-    'Saudi Arabia': {'id': 682, 'region': 'Middle East'},
-    'South Africa': {'id': 710, 'region': 'Southern Africa'},
-    'South Korea': {'id': 410, 'region': 'East Asia'},
-    'Spain': {'id': 724, 'region': 'Europe'},
-    'Sri Lanka': {'id': 144, 'region': 'South Asia'},
-    'Sudan': {'id': 729, 'region': 'East Africa'},
-    'Sweden': {'id': 752, 'region': 'Europe'},
-    'Switzerland': {'id': 756, 'region': 'Europe'},
-    'Syria': {'id': 760, 'region': 'Middle East'},
-    'Thailand': {'id': 764, 'region': 'Southeast Asia'},
-    'Thailand and Cambodia': {'id': None, 'region': 'Southeast Asia'},
-    'The Bahamas': {'id': 44, 'region': 'Central America'},
-    'Tonga': {'id': 776, 'region': 'Pacific'},
-    'Trinidad and Tobago': {'id': 780, 'region': 'Central America'},
-    'Turkey': {'id': 792, 'region': 'Middle East'},
-    'United Arab Emirates': {'id': 784, 'region': 'Middle East'},
-    'United Kingdom': {'id': 826, 'region': 'Europe'},
-    'United States': {'id': 840, 'region': 'North America'},
-    'Uzbekistan': {'id': 860, 'region': 'South Asia'},
-    'Venezuela': {'id': 862, 'region': 'South America'},
-    'Vietnam': {'id': 704, 'region': 'Southeast Asia'},
-    'Zimbabwe': {'id': 716, 'region': 'Southern Africa'},
-}
+cc = coco.CountryConverter()
+df = cc.data[['name_short', 'name_official', 'ISO2', 'ISO3', 'ISOnumeric', 'UNregion', 'continent']]
 
-# region -> numeric ids of ALL its member countries (for region broadcast)
-REGION_TO_IDS = {
-    'North America': [60, 124, 304, 840],
-    'Central America': [28, 44, 52, 84, 188, 192, 212, 214, 222, 308, 320, 332, 340, 388, 484, 558, 591, 630, 659, 662, 670, 780],
-    'South America': [32, 68, 76, 152, 170, 218, 254, 328, 600, 604, 740, 858, 862],
-    'Europe': [8, 20, 40, 56, 70, 100, 112, 191, 196, 203, 208, 233, 246, 250, 276, 300, 336, 348, 352, 372, 380, 428, 438, 440, 442, 470, 492, 498, 499, 528, 578, 616, 620, 642, 643, 674, 688, 703, 705, 724, 752, 756, 804, 807, 826],
-    'Middle East': [12, 31, 48, 51, 268, 364, 368, 376, 400, 414, 422, 434, 504, 512, 634, 682, 760, 784, 788, 792, 818, 887],
-    'West Africa': [132, 204, 270, 288, 324, 384, 430, 466, 478, 562, 566, 624, 686, 694, 768, 854],
-    'East Africa': [108, 174, 231, 232, 262, 404, 450, 454, 480, 646, 690, 706, 728, 729, 800, 834],
-    'Central Africa': [24, 120, 140, 148, 178, 180, 226, 266, 678],
-    'Southern Africa': [72, 426, 508, 516, 710, 716, 748, 894],
-    'East Asia': [156, 158, 344, 392, 408, 410, 446, 496],
-    'Southeast Asia': [96, 104, 116, 360, 418, 458, 608, 626, 702, 704, 764],
-    'South Asia': [4, 50, 64, 144, 356, 398, 417, 462, 524, 586, 762, 795, 860],
-    'Pacific': [36, 90, 242, 258, 296, 520, 540, 548, 554, 583, 584, 585, 598, 776, 798, 882],
-}
+GEO = {}
+skipped = []
+for _, r in df.iterrows():
+    try:
+        iso_id = int(r['ISOnumeric'])
+    except (TypeError, ValueError):
+        skipped.append(r['name_short']); continue
+    entry = {
+        "id": iso_id,
+        "name": r['name_short'],          # canonical label
+        "region": r['UNregion'],          # UN M49 subregion
+        "continent": r['continent'],
+        "iso3": r['ISO3'],
+    }
+    # index under several spellings so lookups hit
+    for key in {r['name_short'], r['name_official'], r['ISO3'], r['ISO2']}:
+        if isinstance(key, str) and key.strip():
+            GEO[key] = entry
+
+with open('geo_lookup.json', 'w', encoding='utf-8') as f:
+    json.dump(GEO, f, ensure_ascii=False, indent=2, sort_keys=True)
+
+
+
+if __name__ == "__main__":
+    ids = {e['id'] for e in GEO.values()}
+    print(f"keys (incl. aliases): {len(GEO)}")
+    print(f"distinct countries  : {len(ids)}")
+    print(f"distinct regions    : {len(  {e['region'] for e in GEO.values()} )}")
+    print(f"skipped (no numeric): {skipped}")
+
+    print(json.dumps(GEO, indent=2))

@@ -9,7 +9,7 @@ from sqlalchemy import create_engine
 import time
 import functools
 
-from backend.services.inject import inject_data
+from backend.services.inject import inject_spec
 from backend.schema.introspect import load_schema, format_schema_for_prompt, format_vocab_for_prompt
 from backend.validation.validate import evaluate_response
 from backend.validation.component_validation.parse_model_response import parse_model_response
@@ -27,10 +27,8 @@ if DATABASE_URL:
     engine = create_engine(DATABASE_URL)
     db_schema = load_schema(engine)
 
-
 router = APIRouter(prefix="/api")
 
-#On backend boot, inject database information into system prompt
 
 _template = (PARENT_PATH / "prompts/system_prompt.txt").read_text(encoding="utf-8")
 SYSTEM_PROMPT = (
@@ -94,7 +92,7 @@ def inference(query, temperature:float=1, model="gpt-4-turbo"):
 
 
 
-def _generate_validated_spec(query:str, db_schema=db_schema, MAX_RETRY=3):
+def generate_validated_spec(query:str, db_schema=db_schema, MAX_RETRY=3) -> tuple[dict, list[dict]]:
     '''
     
     '''
@@ -109,18 +107,19 @@ def _generate_validated_spec(query:str, db_schema=db_schema, MAX_RETRY=3):
         print(f"INFO: Inference attempt {attempt}" if attempt>0 else f"INFO: Initial inference")
         content = inference(messages)
         spec, err = parse_model_response(content)
-        if not err and spec:
+        if spec and not err:
             ok, err = evaluate_response(spec, db_schema)
             if ok:
                 if spec.get("answerable"):
-                    spec, err = inject_data(spec, engine)
+                    spec, err = inject_spec(spec, engine)
 
-                if not err:
+                if not err and spec:
                     end_time = time.perf_counter()
                     execution_time = end_time - start_time
 
                     attempts.append({"attempt": attempt, "outcome": "success", "error_type": None, "error_message": None, "inference_time":execution_time})
-                    return spec, None, attempts  
+                    print(f"INFO: Inference attempt {attempt}" if attempt>0 else f"INFO: Initial inference - Validation and injection passed successfully")
+                    return spec, attempts  
             
         last_errors=err
 
@@ -130,16 +129,16 @@ def _generate_validated_spec(query:str, db_schema=db_schema, MAX_RETRY=3):
             "attempt": attempt,
             "outcome": "fail",
             "error_type": last_errors[0].type,
-            "error_message": str(err[0]),
+            "error_message": str(err),
             "inference_time":execution_time
         })
 
         messages.append({"role": "assistant", "content": content})
         messages.append({"role": "user", "content": build_healing_prompt(str(err[0]))}) 
 
-        print(f"WARNING: attempt {attempt} failed | Type: {last_errors[0].type} | Details: {last_errors[0].details}")
+        print(f"WARNING: attempt {attempt} failed | Type: {last_errors[0].type} | Details: {last_errors[0].details} | Location: {last_errors[0].location}")
 
-    return {"answerable":False, "reason":last_errors}, last_errors, attempts
+    return {"answerable":False, "reason":last_errors}, attempts
 
 
 
@@ -151,7 +150,7 @@ async def handle_query(query: QueryRequest) -> dict:
     Output: dict with the model's response text
     Raises: HTTPException on upstream or internal failure
     """
-    spec, _, attempts = _generate_validated_spec(query.query)
+    spec, attempts = generate_validated_spec(query.query)
 
     return {"spec": spec, "attempts":attempts}
 

@@ -3,7 +3,7 @@ import json
 
 from backend.errors.validation_error import ValidationError
 
-def parse_model_response(raw_spec: str) -> tuple[dict | None, list[ValidationError]]:
+def parse_model_response(raw_spec: str) -> tuple[dict|None, list[ValidationError]]:
     """
     Parse the model's text output into a dict, tolerating code fences and
     surrounding prose. Returns (data, None) on success, or (None, errors) if no
@@ -19,8 +19,8 @@ def parse_model_response(raw_spec: str) -> tuple[dict | None, list[ValidationErr
         return None, [err]
 
 
-    match = re.search(r"\{.*\}", raw_spec, re.DOTALL)
-    if not match:
+    spec = re.search(r"\{.*\}", raw_spec, re.DOTALL)
+    if not spec:
         err = ValidationError(
             type="JSON Syntax",
             details= "Your response contained no JSON object. Reply with only the specification as a single JSON object starting with '{' and ending with '}' — no explanation, prose, or other text before or after it.",
@@ -30,7 +30,7 @@ def parse_model_response(raw_spec: str) -> tuple[dict | None, list[ValidationErr
 
 
     try:
-        data = json.loads(match.group())
+        data = json.loads(spec.group())
     except json.JSONDecodeError as e:
         err = ValidationError(
             type="JSON Syntax",

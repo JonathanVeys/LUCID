@@ -1,0 +1,1564 @@
+{
+  "role": "primary",
+  "title": "Reported incidents by region",
+  "summary": "Read the shading to see which world regions report incidents most often; hover a region for its value.",
+  "sql": "SELECT location_country, COUNT(*) AS incident_counts FROM incidents WHERE location_country IS NOT NULL GROUP BY location_country ORDER BY incident_counts DESC LIMIT 1000",
+  "geo_granularity": "region",
+  "label_field": "location_country",
+  "vega_lite": {
+    "$schema": "https://vega-lite.github.io/schema/vega-lite/v5.json",
+    "width": 720,
+    "height": 400,
+    "projection": {
+      "type": "equalEarth"
+    },
+    "data": {
+      "url": "https://cdn.jsdelivr.net/npm/vega-datasets@2/data/world-110m.json",
+      "format": {
+        "type": "topojson",
+        "feature": "countries"
+      }
+    },
+    "transform": [
+      {
+        "lookup": "id",
+        "from": {
+          "data": {
+            "values": [
+              {
+                "id": 533,
+                "value": 29,
+                "label": "Caribbean",
+                "region": "Caribbean"
+              },
+              {
+                "id": 20,
+                "value": 66,
+                "label": "Southern Europe",
+                "region": "Southern Europe"
+              },
+              {
+                "id": 784,
+                "value": 80,
+                "label": "Western Asia",
+                "region": "Western Asia"
+              },
+              {
+                "id": 4,
+                "value": 215,
+                "label": "Southern Asia",
+                "region": "Southern Asia"
+              },
+              {
+                "id": 28,
+                "value": 29,
+                "label": "Caribbean",
+                "region": "Caribbean"
+              },
+              {
+                "id": 24,
+                "value": 1,
+                "label": "Middle Africa",
+                "region": "Middle Africa"
+              },
+              {
+                "id": 660,
+                "value": 29,
+                "label": "Caribbean",
+                "region": "Caribbean"
+              },
+              {
+                "id": 8,
+                "value": 66,
+                "label": "Southern Europe",
+                "region": "Southern Europe"
+              },
+              {
+                "id": 248,
+                "value": 137,
+                "label": "Northern Europe",
+                "region": "Northern Europe"
+              },
+              {
+                "id": 51,
+                "value": 80,
+                "label": "Western Asia",
+                "region": "Western Asia"
+              },
+              {
+                "id": 32,
+                "value": 31,
+                "label": "South America",
+                "region": "South America"
+              },
+              {
+                "id": 16,
+                "value": 1,
+                "label": "Polynesia",
+                "region": "Polynesia"
+              },
+              {
+                "id": 40,
+                "value": 43,
+                "label": "Western Europe",
+                "region": "Western Europe"
+              },
+              {
+                "id": 260,
+                "value": 25,
+                "label": "Eastern Africa",
+                "region": "Eastern Africa"
+              },
+              {
+                "id": 36,
+                "value": 13,
+                "label": "Australia and New Zealand",
+                "region": "Australia and New Zealand"
+              },
+              {
+                "id": 31,
+                "value": 80,
+                "label": "Western Asia",
+                "region": "Western Asia"
+              },
+              {
+                "id": 12,
+                "value": 17,
+                "label": "Northern Africa",
+                "region": "Northern Africa"
+              },
+              {
+                "id": 818,
+                "value": 17,
+                "label": "Northern Africa",
+                "region": "Northern Africa"
+              },
+              {
+                "id": 70,
+                "value": 66,
+                "label": "Southern Europe",
+                "region": "Southern Europe"
+              },
+              {
+                "id": 52,
+                "value": 29,
+                "label": "Caribbean",
+                "region": "Caribbean"
+              },
+              {
+                "id": 50,
+                "value": 215,
+                "label": "Southern Asia",
+                "region": "Southern Asia"
+              },
+              {
+                "id": 108,
+                "value": 25,
+                "label": "Eastern Africa",
+                "region": "Eastern Africa"
+              },
+              {
+                "id": 56,
+                "value": 43,
+                "label": "Western Europe",
+                "region": "Western Europe"
+              },
+              {
+                "id": 204,
+                "value": 93,
+                "label": "Western Africa",
+                "region": "Western Africa"
+              },
+              {
+                "id": 535,
+                "value": 29,
+                "label": "Caribbean",
+                "region": "Caribbean"
+              },
+              {
+                "id": 854,
+                "value": 93,
+                "label": "Western Africa",
+                "region": "Western Africa"
+              },
+              {
+                "id": 100,
+                "value": 7,
+                "label": "Eastern Europe",
+                "region": "Eastern Europe"
+              },
+              {
+                "id": 48,
+                "value": 80,
+                "label": "Western Asia",
+                "region": "Western Asia"
+              },
+              {
+                "id": 44,
+                "value": 29,
+                "label": "Caribbean",
+                "region": "Caribbean"
+              },
+              {
+                "id": 652,
+                "value": 29,
+                "label": "Caribbean",
+                "region": "Caribbean"
+              },
+              {
+                "id": 112,
+                "value": 7,
+                "label": "Eastern Europe",
+                "region": "Eastern Europe"
+              },
+              {
+                "id": 84,
+                "value": 33,
+                "label": "Central America",
+                "region": "Central America"
+              },
+              {
+                "id": 60,
+                "value": 1610,
+                "label": "Northern America",
+                "region": "Northern America"
+              },
+              {
+                "id": 96,
+                "value": 322,
+                "label": "South-eastern Asia",
+                "region": "South-eastern Asia"
+              },
+              {
+                "id": 68,
+                "value": 31,
+                "label": "South America",
+                "region": "South America"
+              },
+              {
+                "id": 76,
+                "value": 31,
+                "label": "South America",
+                "region": "South America"
+              },
+              {
+                "id": 64,
+                "value": 215,
+                "label": "Southern Asia",
+                "region": "Southern Asia"
+              },
+              {
+                "id": 74,
+                "value": 31,
+                "label": "South America",
+                "region": "South America"
+              },
+              {
+                "id": 72,
+                "value": 42,
+                "label": "Southern Africa",
+                "region": "Southern Africa"
+              },
+              {
+                "id": 862,
+                "value": 31,
+                "label": "South America",
+                "region": "South America"
+              },
+              {
+                "id": 86,
+                "value": 25,
+                "label": "Eastern Africa",
+                "region": "Eastern Africa"
+              },
+              {
+                "id": 92,
+                "value": 29,
+                "label": "Caribbean",
+                "region": "Caribbean"
+              },
+              {
+                "id": 124,
+                "value": 1610,
+                "label": "Northern America",
+                "region": "Northern America"
+              },
+              {
+                "id": 140,
+                "value": 1,
+                "label": "Middle Africa",
+                "region": "Middle Africa"
+              },
+              {
+                "id": 166,
+                "value": 13,
+                "label": "Australia and New Zealand",
+                "region": "Australia and New Zealand"
+              },
+              {
+                "id": 180,
+                "value": 1,
+                "label": "Middle Africa",
+                "region": "Middle Africa"
+              },
+              {
+                "id": 178,
+                "value": 1,
+                "label": "Middle Africa",
+                "region": "Middle Africa"
+              },
+              {
+                "id": 756,
+                "value": 43,
+                "label": "Western Europe",
+                "region": "Western Europe"
+              },
+              {
+                "id": 152,
+                "value": 31,
+                "label": "South America",
+                "region": "South America"
+              },
+              {
+                "id": 156,
+                "value": 40,
+                "label": "Eastern Asia",
+                "region": "Eastern Asia"
+              },
+              {
+                "id": 384,
+                "value": 93,
+                "label": "Western Africa",
+                "region": "Western Africa"
+              },
+              {
+                "id": 184,
+                "value": 1,
+                "label": "Polynesia",
+                "region": "Polynesia"
+              },
+              {
+                "id": 120,
+                "value": 1,
+                "label": "Middle Africa",
+                "region": "Middle Africa"
+              },
+              {
+                "id": 170,
+                "value": 31,
+                "label": "South America",
+                "region": "South America"
+              },
+              {
+                "id": 174,
+                "value": 25,
+                "label": "Eastern Africa",
+                "region": "Eastern Africa"
+              },
+              {
+                "id": 132,
+                "value": 93,
+                "label": "Western Africa",
+                "region": "Western Africa"
+              },
+              {
+                "id": 188,
+                "value": 33,
+                "label": "Central America",
+                "region": "Central America"
+              },
+              {
+                "id": 192,
+                "value": 29,
+                "label": "Caribbean",
+                "region": "Caribbean"
+              },
+              {
+                "id": 531,
+                "value": 29,
+                "label": "Caribbean",
+                "region": "Caribbean"
+              },
+              {
+                "id": 162,
+                "value": 13,
+                "label": "Australia and New Zealand",
+                "region": "Australia and New Zealand"
+              },
+              {
+                "id": 196,
+                "value": 80,
+                "label": "Western Asia",
+                "region": "Western Asia"
+              },
+              {
+                "id": 136,
+                "value": 29,
+                "label": "Caribbean",
+                "region": "Caribbean"
+              },
+              {
+                "id": 203,
+                "value": 7,
+                "label": "Eastern Europe",
+                "region": "Eastern Europe"
+              },
+              {
+                "id": 116,
+                "value": 322,
+                "label": "South-eastern Asia",
+                "region": "South-eastern Asia"
+              },
+              {
+                "id": 148,
+                "value": 1,
+                "label": "Middle Africa",
+                "region": "Middle Africa"
+              },
+              {
+                "id": 328,
+                "value": 31,
+                "label": "South America",
+                "region": "South America"
+              },
+              {
+                "id": 212,
+                "value": 29,
+                "label": "Caribbean",
+                "region": "Caribbean"
+              },
+              {
+                "id": 191,
+                "value": 66,
+                "label": "Southern Europe",
+                "region": "Southern Europe"
+              },
+              {
+                "id": 276,
+                "value": 43,
+                "label": "Western Europe",
+                "region": "Western Europe"
+              },
+              {
+                "id": 262,
+                "value": 25,
+                "label": "Eastern Africa",
+                "region": "Eastern Africa"
+              },
+              {
+                "id": 208,
+                "value": 137,
+                "label": "Northern Europe",
+                "region": "Northern Europe"
+              },
+              {
+                "id": 214,
+                "value": 29,
+                "label": "Caribbean",
+                "region": "Caribbean"
+              },
+              {
+                "id": 408,
+                "value": 40,
+                "label": "Eastern Asia",
+                "region": "Eastern Asia"
+              },
+              {
+                "id": 678,
+                "value": 1,
+                "label": "Middle Africa",
+                "region": "Middle Africa"
+              },
+              {
+                "id": 626,
+                "value": 322,
+                "label": "South-eastern Asia",
+                "region": "South-eastern Asia"
+              },
+              {
+                "id": 144,
+                "value": 215,
+                "label": "Southern Asia",
+                "region": "Southern Asia"
+              },
+              {
+                "id": 218,
+                "value": 31,
+                "label": "South America",
+                "region": "South America"
+              },
+              {
+                "id": 233,
+                "value": 137,
+                "label": "Northern Europe",
+                "region": "Northern Europe"
+              },
+              {
+                "id": 732,
+                "value": 17,
+                "label": "Northern Africa",
+                "region": "Northern Africa"
+              },
+              {
+                "id": 232,
+                "value": 25,
+                "label": "Eastern Africa",
+                "region": "Eastern Africa"
+              },
+              {
+                "id": 724,
+                "value": 66,
+                "label": "Southern Europe",
+                "region": "Southern Europe"
+              },
+              {
+                "id": 231,
+                "value": 25,
+                "label": "Eastern Africa",
+                "region": "Eastern Africa"
+              },
+              {
+                "id": 222,
+                "value": 33,
+                "label": "Central America",
+                "region": "Central America"
+              },
+              {
+                "id": 226,
+                "value": 1,
+                "label": "Middle Africa",
+                "region": "Middle Africa"
+              },
+              {
+                "id": 748,
+                "value": 42,
+                "label": "Southern Africa",
+                "region": "Southern Africa"
+              },
+              {
+                "id": 246,
+                "value": 137,
+                "label": "Northern Europe",
+                "region": "Northern Europe"
+              },
+              {
+                "id": 242,
+                "value": 3,
+                "label": "Melanesia",
+                "region": "Melanesia"
+              },
+              {
+                "id": 238,
+                "value": 31,
+                "label": "South America",
+                "region": "South America"
+              },
+              {
+                "id": 583,
+                "value": 1,
+                "label": "Micronesia",
+                "region": "Micronesia"
+              },
+              {
+                "id": 234,
+                "value": 137,
+                "label": "Northern Europe",
+                "region": "Northern Europe"
+              },
+              {
+                "id": 250,
+                "value": 43,
+                "label": "Western Europe",
+                "region": "Western Europe"
+              },
+              {
+                "id": 524,
+                "value": 215,
+                "label": "Southern Asia",
+                "region": "Southern Asia"
+              },
+              {
+                "id": 566,
+                "value": 93,
+                "label": "Western Africa",
+                "region": "Western Africa"
+              },
+              {
+                "id": 706,
+                "value": 25,
+                "label": "Eastern Africa",
+                "region": "Eastern Africa"
+              },
+              {
+                "id": 254,
+                "value": 31,
+                "label": "South America",
+                "region": "South America"
+              },
+              {
+                "id": 258,
+                "value": 1,
+                "label": "Polynesia",
+                "region": "Polynesia"
+              },
+              {
+                "id": 266,
+                "value": 1,
+                "label": "Middle Africa",
+                "region": "Middle Africa"
+              },
+              {
+                "id": 826,
+                "value": 137,
+                "label": "Northern Europe",
+                "region": "Northern Europe"
+              },
+              {
+                "id": 308,
+                "value": 29,
+                "label": "Caribbean",
+                "region": "Caribbean"
+              },
+              {
+                "id": 268,
+                "value": 80,
+                "label": "Western Asia",
+                "region": "Western Asia"
+              },
+              {
+                "id": 831,
+                "value": 137,
+                "label": "Northern Europe",
+                "region": "Northern Europe"
+              },
+              {
+                "id": 288,
+                "value": 93,
+                "label": "Western Africa",
+                "region": "Western Africa"
+              },
+              {
+                "id": 292,
+                "value": 66,
+                "label": "Southern Europe",
+                "region": "Southern Europe"
+              },
+              {
+                "id": 324,
+                "value": 93,
+                "label": "Western Africa",
+                "region": "Western Africa"
+              },
+              {
+                "id": 304,
+                "value": 1610,
+                "label": "Northern America",
+                "region": "Northern America"
+              },
+              {
+                "id": 312,
+                "value": 29,
+                "label": "Caribbean",
+                "region": "Caribbean"
+              },
+              {
+                "id": 270,
+                "value": 93,
+                "label": "Western Africa",
+                "region": "Western Africa"
+              },
+              {
+                "id": 624,
+                "value": 93,
+                "label": "Western Africa",
+                "region": "Western Africa"
+              },
+              {
+                "id": 300,
+                "value": 66,
+                "label": "Southern Europe",
+                "region": "Southern Europe"
+              },
+              {
+                "id": 239,
+                "value": 31,
+                "label": "South America",
+                "region": "South America"
+              },
+              {
+                "id": 320,
+                "value": 33,
+                "label": "Central America",
+                "region": "Central America"
+              },
+              {
+                "id": 316,
+                "value": 1,
+                "label": "Micronesia",
+                "region": "Micronesia"
+              },
+              {
+                "id": 442,
+                "value": 43,
+                "label": "Western Europe",
+                "region": "Western Europe"
+              },
+              {
+                "id": 344,
+                "value": 40,
+                "label": "Eastern Asia",
+                "region": "Eastern Asia"
+              },
+              {
+                "id": 334,
+                "value": 13,
+                "label": "Australia and New Zealand",
+                "region": "Australia and New Zealand"
+              },
+              {
+                "id": 340,
+                "value": 33,
+                "label": "Central America",
+                "region": "Central America"
+              },
+              {
+                "id": 332,
+                "value": 29,
+                "label": "Caribbean",
+                "region": "Caribbean"
+              },
+              {
+                "id": 348,
+                "value": 7,
+                "label": "Eastern Europe",
+                "region": "Eastern Europe"
+              },
+              {
+                "id": 400,
+                "value": 80,
+                "label": "Western Asia",
+                "region": "Western Asia"
+              },
+              {
+                "id": 360,
+                "value": 322,
+                "label": "South-eastern Asia",
+                "region": "South-eastern Asia"
+              },
+              {
+                "id": 372,
+                "value": 137,
+                "label": "Northern Europe",
+                "region": "Northern Europe"
+              },
+              {
+                "id": 376,
+                "value": 80,
+                "label": "Western Asia",
+                "region": "Western Asia"
+              },
+              {
+                "id": 833,
+                "value": 137,
+                "label": "Northern Europe",
+                "region": "Northern Europe"
+              },
+              {
+                "id": 356,
+                "value": 215,
+                "label": "Southern Asia",
+                "region": "Southern Asia"
+              },
+              {
+                "id": 368,
+                "value": 80,
+                "label": "Western Asia",
+                "region": "Western Asia"
+              },
+              {
+                "id": 364,
+                "value": 215,
+                "label": "Southern Asia",
+                "region": "Southern Asia"
+              },
+              {
+                "id": 352,
+                "value": 137,
+                "label": "Northern Europe",
+                "region": "Northern Europe"
+              },
+              {
+                "id": 380,
+                "value": 66,
+                "label": "Southern Europe",
+                "region": "Southern Europe"
+              },
+              {
+                "id": 598,
+                "value": 3,
+                "label": "Melanesia",
+                "region": "Melanesia"
+              },
+              {
+                "id": 882,
+                "value": 1,
+                "label": "Polynesia",
+                "region": "Polynesia"
+              },
+              {
+                "id": 478,
+                "value": 93,
+                "label": "Western Africa",
+                "region": "Western Africa"
+              },
+              {
+                "id": 586,
+                "value": 215,
+                "label": "Southern Asia",
+                "region": "Southern Asia"
+              },
+              {
+                "id": 388,
+                "value": 29,
+                "label": "Caribbean",
+                "region": "Caribbean"
+              },
+              {
+                "id": 832,
+                "value": 137,
+                "label": "Northern Europe",
+                "region": "Northern Europe"
+              },
+              {
+                "id": 392,
+                "value": 40,
+                "label": "Eastern Asia",
+                "region": "Eastern Asia"
+              },
+              {
+                "id": 398,
+                "value": 12,
+                "label": "Central Asia",
+                "region": "Central Asia"
+              },
+              {
+                "id": 404,
+                "value": 25,
+                "label": "Eastern Africa",
+                "region": "Eastern Africa"
+              },
+              {
+                "id": 417,
+                "value": 12,
+                "label": "Central Asia",
+                "region": "Central Asia"
+              },
+              {
+                "id": 296,
+                "value": 1,
+                "label": "Micronesia",
+                "region": "Micronesia"
+              },
+              {
+                "id": 659,
+                "value": 29,
+                "label": "Caribbean",
+                "region": "Caribbean"
+              },
+              {
+                "id": 410,
+                "value": 40,
+                "label": "Eastern Asia",
+                "region": "Eastern Asia"
+              },
+              {
+                "id": 414,
+                "value": 80,
+                "label": "Western Asia",
+                "region": "Western Asia"
+              },
+              {
+                "id": 426,
+                "value": 42,
+                "label": "Southern Africa",
+                "region": "Southern Africa"
+              },
+              {
+                "id": 504,
+                "value": 17,
+                "label": "Northern Africa",
+                "region": "Northern Africa"
+              },
+              {
+                "id": 578,
+                "value": 137,
+                "label": "Northern Europe",
+                "region": "Northern Europe"
+              },
+              {
+                "id": 682,
+                "value": 80,
+                "label": "Western Asia",
+                "region": "Western Asia"
+              },
+              {
+                "id": 752,
+                "value": 137,
+                "label": "Northern Europe",
+                "region": "Northern Europe"
+              },
+              {
+                "id": 764,
+                "value": 322,
+                "label": "South-eastern Asia",
+                "region": "South-eastern Asia"
+              },
+              {
+                "id": 776,
+                "value": 1,
+                "label": "Polynesia",
+                "region": "Polynesia"
+              },
+              {
+                "id": 528,
+                "value": 43,
+                "label": "Western Europe",
+                "region": "Western Europe"
+              },
+              {
+                "id": 412,
+                "value": 66,
+                "label": "Southern Europe",
+                "region": "Southern Europe"
+              },
+              {
+                "id": 418,
+                "value": 322,
+                "label": "South-eastern Asia",
+                "region": "South-eastern Asia"
+              },
+              {
+                "id": 422,
+                "value": 80,
+                "label": "Western Asia",
+                "region": "Western Asia"
+              },
+              {
+                "id": 430,
+                "value": 93,
+                "label": "Western Africa",
+                "region": "Western Africa"
+              },
+              {
+                "id": 434,
+                "value": 17,
+                "label": "Northern Africa",
+                "region": "Northern Africa"
+              },
+              {
+                "id": 662,
+                "value": 29,
+                "label": "Caribbean",
+                "region": "Caribbean"
+              },
+              {
+                "id": 438,
+                "value": 43,
+                "label": "Western Europe",
+                "region": "Western Europe"
+              },
+              {
+                "id": 440,
+                "value": 137,
+                "label": "Northern Europe",
+                "region": "Northern Europe"
+              },
+              {
+                "id": 428,
+                "value": 137,
+                "label": "Northern Europe",
+                "region": "Northern Europe"
+              },
+              {
+                "id": 446,
+                "value": 40,
+                "label": "Eastern Asia",
+                "region": "Eastern Asia"
+              },
+              {
+                "id": 663,
+                "value": 29,
+                "label": "Caribbean",
+                "region": "Caribbean"
+              },
+              {
+                "id": 492,
+                "value": 43,
+                "label": "Western Europe",
+                "region": "Western Europe"
+              },
+              {
+                "id": 498,
+                "value": 7,
+                "label": "Eastern Europe",
+                "region": "Eastern Europe"
+              },
+              {
+                "id": 450,
+                "value": 25,
+                "label": "Eastern Africa",
+                "region": "Eastern Africa"
+              },
+              {
+                "id": 462,
+                "value": 215,
+                "label": "Southern Asia",
+                "region": "Southern Asia"
+              },
+              {
+                "id": 499,
+                "value": 66,
+                "label": "Southern Europe",
+                "region": "Southern Europe"
+              },
+              {
+                "id": 484,
+                "value": 33,
+                "label": "Central America",
+                "region": "Central America"
+              },
+              {
+                "id": 584,
+                "value": 1,
+                "label": "Micronesia",
+                "region": "Micronesia"
+              },
+              {
+                "id": 807,
+                "value": 66,
+                "label": "Southern Europe",
+                "region": "Southern Europe"
+              },
+              {
+                "id": 466,
+                "value": 93,
+                "label": "Western Africa",
+                "region": "Western Africa"
+              },
+              {
+                "id": 470,
+                "value": 66,
+                "label": "Southern Europe",
+                "region": "Southern Europe"
+              },
+              {
+                "id": 104,
+                "value": 322,
+                "label": "South-eastern Asia",
+                "region": "South-eastern Asia"
+              },
+              {
+                "id": 496,
+                "value": 40,
+                "label": "Eastern Asia",
+                "region": "Eastern Asia"
+              },
+              {
+                "id": 580,
+                "value": 1,
+                "label": "Micronesia",
+                "region": "Micronesia"
+              },
+              {
+                "id": 508,
+                "value": 25,
+                "label": "Eastern Africa",
+                "region": "Eastern Africa"
+              },
+              {
+                "id": 474,
+                "value": 29,
+                "label": "Caribbean",
+                "region": "Caribbean"
+              },
+              {
+                "id": 500,
+                "value": 29,
+                "label": "Caribbean",
+                "region": "Caribbean"
+              },
+              {
+                "id": 480,
+                "value": 25,
+                "label": "Eastern Africa",
+                "region": "Eastern Africa"
+              },
+              {
+                "id": 454,
+                "value": 25,
+                "label": "Eastern Africa",
+                "region": "Eastern Africa"
+              },
+              {
+                "id": 458,
+                "value": 322,
+                "label": "South-eastern Asia",
+                "region": "South-eastern Asia"
+              },
+              {
+                "id": 175,
+                "value": 25,
+                "label": "Eastern Africa",
+                "region": "Eastern Africa"
+              },
+              {
+                "id": 516,
+                "value": 42,
+                "label": "Southern Africa",
+                "region": "Southern Africa"
+              },
+              {
+                "id": 540,
+                "value": 3,
+                "label": "Melanesia",
+                "region": "Melanesia"
+              },
+              {
+                "id": 562,
+                "value": 93,
+                "label": "Western Africa",
+                "region": "Western Africa"
+              },
+              {
+                "id": 574,
+                "value": 13,
+                "label": "Australia and New Zealand",
+                "region": "Australia and New Zealand"
+              },
+              {
+                "id": 558,
+                "value": 33,
+                "label": "Central America",
+                "region": "Central America"
+              },
+              {
+                "id": 570,
+                "value": 1,
+                "label": "Polynesia",
+                "region": "Polynesia"
+              },
+              {
+                "id": 520,
+                "value": 1,
+                "label": "Polynesia",
+                "region": "Polynesia"
+              },
+              {
+                "id": 554,
+                "value": 13,
+                "label": "Australia and New Zealand",
+                "region": "Australia and New Zealand"
+              },
+              {
+                "id": 512,
+                "value": 80,
+                "label": "Western Asia",
+                "region": "Western Asia"
+              },
+              {
+                "id": 858,
+                "value": 31,
+                "label": "South America",
+                "region": "South America"
+              },
+              {
+                "id": 591,
+                "value": 33,
+                "label": "Central America",
+                "region": "Central America"
+              },
+              {
+                "id": 612,
+                "value": 1,
+                "label": "Polynesia",
+                "region": "Polynesia"
+              },
+              {
+                "id": 604,
+                "value": 31,
+                "label": "South America",
+                "region": "South America"
+              },
+              {
+                "id": 608,
+                "value": 322,
+                "label": "South-eastern Asia",
+                "region": "South-eastern Asia"
+              },
+              {
+                "id": 616,
+                "value": 7,
+                "label": "Eastern Europe",
+                "region": "Eastern Europe"
+              },
+              {
+                "id": 585,
+                "value": 1,
+                "label": "Micronesia",
+                "region": "Micronesia"
+              },
+              {
+                "id": 666,
+                "value": 1610,
+                "label": "Northern America",
+                "region": "Northern America"
+              },
+              {
+                "id": 630,
+                "value": 29,
+                "label": "Caribbean",
+                "region": "Caribbean"
+              },
+              {
+                "id": 620,
+                "value": 66,
+                "label": "Southern Europe",
+                "region": "Southern Europe"
+              },
+              {
+                "id": 600,
+                "value": 31,
+                "label": "South America",
+                "region": "South America"
+              },
+              {
+                "id": 275,
+                "value": 80,
+                "label": "Western Asia",
+                "region": "Western Asia"
+              },
+              {
+                "id": 634,
+                "value": 80,
+                "label": "Western Asia",
+                "region": "Western Asia"
+              },
+              {
+                "id": 638,
+                "value": 25,
+                "label": "Eastern Africa",
+                "region": "Eastern Africa"
+              },
+              {
+                "id": 642,
+                "value": 7,
+                "label": "Eastern Europe",
+                "region": "Eastern Europe"
+              },
+              {
+                "id": 688,
+                "value": 66,
+                "label": "Southern Europe",
+                "region": "Southern Europe"
+              },
+              {
+                "id": 643,
+                "value": 7,
+                "label": "Eastern Europe",
+                "region": "Eastern Europe"
+              },
+              {
+                "id": 646,
+                "value": 25,
+                "label": "Eastern Africa",
+                "region": "Eastern Africa"
+              },
+              {
+                "id": 158,
+                "value": 40,
+                "label": "Eastern Asia",
+                "region": "Eastern Asia"
+              },
+              {
+                "id": 674,
+                "value": 66,
+                "label": "Southern Europe",
+                "region": "Southern Europe"
+              },
+              {
+                "id": 686,
+                "value": 93,
+                "label": "Western Africa",
+                "region": "Western Africa"
+              },
+              {
+                "id": 690,
+                "value": 25,
+                "label": "Eastern Africa",
+                "region": "Eastern Africa"
+              },
+              {
+                "id": 694,
+                "value": 93,
+                "label": "Western Africa",
+                "region": "Western Africa"
+              },
+              {
+                "id": 702,
+                "value": 322,
+                "label": "South-eastern Asia",
+                "region": "South-eastern Asia"
+              },
+              {
+                "id": 705,
+                "value": 66,
+                "label": "Southern Europe",
+                "region": "Southern Europe"
+              },
+              {
+                "id": 710,
+                "value": 42,
+                "label": "Southern Africa",
+                "region": "Southern Africa"
+              },
+              {
+                "id": 728,
+                "value": 25,
+                "label": "Eastern Africa",
+                "region": "Eastern Africa"
+              },
+              {
+                "id": 740,
+                "value": 31,
+                "label": "South America",
+                "region": "South America"
+              },
+              {
+                "id": 762,
+                "value": 12,
+                "label": "Central Asia",
+                "region": "Central Asia"
+              },
+              {
+                "id": 780,
+                "value": 29,
+                "label": "Caribbean",
+                "region": "Caribbean"
+              },
+              {
+                "id": 788,
+                "value": 17,
+                "label": "Northern Africa",
+                "region": "Northern Africa"
+              },
+              {
+                "id": 792,
+                "value": 80,
+                "label": "Western Asia",
+                "region": "Western Asia"
+              },
+              {
+                "id": 800,
+                "value": 25,
+                "label": "Eastern Africa",
+                "region": "Eastern Africa"
+              },
+              {
+                "id": 860,
+                "value": 12,
+                "label": "Central Asia",
+                "region": "Central Asia"
+              },
+              {
+                "id": 548,
+                "value": 3,
+                "label": "Melanesia",
+                "region": "Melanesia"
+              },
+              {
+                "id": 887,
+                "value": 80,
+                "label": "Western Asia",
+                "region": "Western Asia"
+              },
+              {
+                "id": 894,
+                "value": 25,
+                "label": "Eastern Africa",
+                "region": "Eastern Africa"
+              },
+              {
+                "id": 716,
+                "value": 25,
+                "label": "Eastern Africa",
+                "region": "Eastern Africa"
+              },
+              {
+                "id": 729,
+                "value": 17,
+                "label": "Northern Africa",
+                "region": "Northern Africa"
+              },
+              {
+                "id": 90,
+                "value": 3,
+                "label": "Melanesia",
+                "region": "Melanesia"
+              },
+              {
+                "id": 654,
+                "value": 93,
+                "label": "Western Africa",
+                "region": "Western Africa"
+              },
+              {
+                "id": 744,
+                "value": 137,
+                "label": "Northern Europe",
+                "region": "Northern Europe"
+              },
+              {
+                "id": 703,
+                "value": 7,
+                "label": "Eastern Europe",
+                "region": "Eastern Europe"
+              },
+              {
+                "id": 534,
+                "value": 29,
+                "label": "Caribbean",
+                "region": "Caribbean"
+              },
+              {
+                "id": 760,
+                "value": 80,
+                "label": "Western Asia",
+                "region": "Western Asia"
+              },
+              {
+                "id": 670,
+                "value": 29,
+                "label": "Caribbean",
+                "region": "Caribbean"
+              },
+              {
+                "id": 704,
+                "value": 322,
+                "label": "South-eastern Asia",
+                "region": "South-eastern Asia"
+              },
+              {
+                "id": 796,
+                "value": 29,
+                "label": "Caribbean",
+                "region": "Caribbean"
+              },
+              {
+                "id": 768,
+                "value": 93,
+                "label": "Western Africa",
+                "region": "Western Africa"
+              },
+              {
+                "id": 772,
+                "value": 1,
+                "label": "Polynesia",
+                "region": "Polynesia"
+              },
+              {
+                "id": 795,
+                "value": 12,
+                "label": "Central Asia",
+                "region": "Central Asia"
+              },
+              {
+                "id": 798,
+                "value": 1,
+                "label": "Polynesia",
+                "region": "Polynesia"
+              },
+              {
+                "id": 834,
+                "value": 25,
+                "label": "Eastern Africa",
+                "region": "Eastern Africa"
+              },
+              {
+                "id": 804,
+                "value": 7,
+                "label": "Eastern Europe",
+                "region": "Eastern Europe"
+              },
+              {
+                "id": 581,
+                "value": 1,
+                "label": "Micronesia",
+                "region": "Micronesia"
+              },
+              {
+                "id": 840,
+                "value": 1610,
+                "label": "Northern America",
+                "region": "Northern America"
+              },
+              {
+                "id": 850,
+                "value": 29,
+                "label": "Caribbean",
+                "region": "Caribbean"
+              },
+              {
+                "id": 336,
+                "value": 66,
+                "label": "Southern Europe",
+                "region": "Southern Europe"
+              },
+              {
+                "id": 876,
+                "value": 1,
+                "label": "Polynesia",
+                "region": "Polynesia"
+              }
+            ]
+          },
+          "key": "id",
+          "fields": [
+            "value"
+          ]
+        }
+      }
+    ],
+    "mark": {
+      "type": "geoshape",
+      "stroke": "white",
+      "strokeWidth": 0.4
+    },
+    "encoding": {
+      "color": {
+        "field": "value",
+        "type": "quantitative",
+        "scale": {
+          "scheme": "yelloworangered"
+        },
+        "legend": {
+          "title": "Reported incidents"
+        }
+      },
+      "tooltip": [
+        {
+          "field": "value",
+          "type": "quantitative",
+          "title": "Reported incidents"
+        }
+      ]
+    },
+    "config": {
+      "view": {
+        "stroke": null
+      },
+      "mark": {
+        "invalid": null
+      }
+    }
+  }
+}
