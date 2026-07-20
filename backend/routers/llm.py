@@ -91,7 +91,7 @@ def inference(query, temperature:float=1, model="gpt-4-turbo"):
 
 
 
-def generate_validated_spec(query:str, db_schema=db_schema, MAX_RETRY=3) -> tuple[dict, list[dict]]:
+def generate_validated_spec(query:str, db_schema=db_schema, MAX_RETRY=1) -> tuple[dict, list[dict]]:
     '''
     
     '''
@@ -106,6 +106,12 @@ def generate_validated_spec(query:str, db_schema=db_schema, MAX_RETRY=3) -> tupl
         print(f"INFO: Inference attempt {attempt}" if attempt>0 else f"INFO: Initial inference")
         content = inference(messages)
         spec, err = parse_model_response(content)
+
+        # try:
+        #     print(json.dumps(spec, indent=2))
+        # except:
+        #     print("Failed to print error spec")
+
         if spec and not err:
             ok, err = evaluate_response(spec, db_schema)
             if ok:

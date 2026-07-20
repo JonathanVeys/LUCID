@@ -1,4 +1,4 @@
-from sqlalchemy import Engine, create_engine, exc
+from sqlalchemy import Engine, create_engine, exc, text
 import json
 from collections import defaultdict
 from pathlib import Path
@@ -19,7 +19,7 @@ while True:
 with open(ROOT_PATH/"data/geo_lookup.json") as f:
     GEO = json.load(f)
 
-def handle_countries(chart:dict, rows:list, value_field:str, URLs:list[str]) -> tuple[list|None, list[ValidationError]]:
+def handle_countries(chart:dict, rows:list, value_field:str) -> tuple[list|None, list[ValidationError]]:
     '''
     A function that handles taking raw countries names from database, assinging ISO codes and handles duplicates by merging
     '''
@@ -40,6 +40,7 @@ def handle_countries(chart:dict, rows:list, value_field:str, URLs:list[str]) -> 
         iso_id = country_meta.get('id')
         _value = row.get(value_field)
         value  = int(_value) if _value is not None else 0
+        urls = row.get("urls")
 
         #If country has already appeared, sum value, if not, add new instance
         if iso_id in totals:
@@ -49,47 +50,60 @@ def handle_countries(chart:dict, rows:list, value_field:str, URLs:list[str]) -> 
                 "id":iso_id,
                 "value":value,
                 "label":country_name,
-                "region":country_meta.get("region")
+                "region":country_meta.get("region"),
+                "urls":urls
             }
     return list(totals.values()), []
     
 
-def handle_regions(chart:dict, rows:list, value_field:str,  URLs:list[str]) -> tuple[list|None, list[ValidationError]]:
+def handle_regions(chart:dict, rows:list, value_field:str) -> tuple[list|None, list[ValidationError]]:
     '''
     
     '''
     label_field = chart.get("label_field")
 
-    region_totals = defaultdict(int)
+    region_data = defaultdict(lambda: {"value": 0, "urls": []})
     unmatched = []
+
     for row in rows:
         name = row.get(label_field)
         meta = GEO.get(name)
         if not meta or meta.get("id") is None:
             unmatched.append(name)
             continue
+
+        region = meta["region"]
         v = row.get(value_field)
-        region_totals[meta["region"]] += int(v) if v is not None else 0
+        region_data[region]["value"] += int(v) if v is not None else 0
+
+        urls = row.get("urls") or []       
+        if urls:
+            region_data[region]["urls"].extend(
+                urls
+            )
+            # region_data[region]["url_groups"].append(
+            #     [{"url": u, "country": meta.get("name", name)} for u in urls]
+            # )
 
     # Pass 2: fan out — iterate GEO (every country we know about)
     totals = {}
     for name, meta in GEO.items():
         iso_id, region = meta.get("id"), meta.get("region")
-        if iso_id is None or region not in region_totals:
-            continue                     # region had no data at all -> leave blank
+        if iso_id is None or region not in region_data:
+            continue                     
         totals[iso_id] = {
             "id": iso_id,
-            "value": region_totals[region],
+            "value": region_data[region]["value"],
             "label": region,
             "region": region,
+            "urls":region_data[region]["urls"]
         }
-
-    for country in unmatched:
-        print(f"WARNING : {country} does not have metadata and has not been excluded from count")
+    # for country in unmatched:
+    #     print(f"WARNING : {country} does not have metadata and has not been excluded from count")
     return list(totals.values()), []
 
 
-def handle_choropleth_inject(chart:dict, rows:list, URLs:list[str]=["test_ulrs"]) -> tuple[dict|None, list[ValidationError]]:
+def handle_choropleth_inject(chart:dict, rows:list) -> tuple[dict|None, list[ValidationError]]:
     '''
     
     '''
@@ -97,9 +111,9 @@ def handle_choropleth_inject(chart:dict, rows:list, URLs:list[str]=["test_ulrs"]
     granularity = chart.get("geo_granularity")
 
     if granularity == "country":
-        data, errs = handle_countries(chart, rows, value_field, URLs)    
+        data, errs = handle_countries(chart, rows, value_field)    
     elif granularity == "region":
-        data, errs = handle_regions(chart, rows, value_field, URLs)
+        data, errs = handle_regions(chart, rows, value_field)
     if errs:
         return None, errs
 
@@ -108,7 +122,7 @@ def handle_choropleth_inject(chart:dict, rows:list, URLs:list[str]=["test_ulrs"]
         vl["transform"][0]["from"]["data"]["values"] = data
     return chart, []
 
-def handle_chart_inject(chart:dict, rows:list, URLs:list[str]=["test_urls"]) -> tuple[dict|None, list[ValidationError]]:
+def handle_chart_inject(chart:dict, rows:list) -> tuple[dict|None, list[ValidationError]]:
     '''
     A function for taking a non-geoshape chart, and injecting data
     '''
@@ -118,14 +132,14 @@ def handle_chart_inject(chart:dict, rows:list, URLs:list[str]=["test_urls"]) -> 
     for row in rows:
         try:
             row["label"] = row[label_field] 
-            row["urls"] = URLs
+            row["urls"] = row["urls"]
         except KeyError as e:
             err = ValidationError(
                 type="SQL Execution",
                 details=(f"label_field '{label_field}' is not among the query's output "
                          f"columns: {sorted(rows[0].keys())}. Either select it in the SQL "
                          f"or set label_field to one of those columns."),
-                location="inject_chart_data"
+                location="handle_chart_inject"
             )
             return None, [err]
 
@@ -140,15 +154,25 @@ def inject_single_chart(chart:dict, engine:Engine) -> tuple[dict|None, list[Vali
     
     '''
     with engine.connect() as conn:
-        data_sql = chart.get("sql")
-        url_sql = chart.get("url_sql")
+        agg_sql = chart.get("sql", "")
+        url_sql = chart.get("url_sql", "")
         vega_lite = chart.get("vega_lite", {})  
 
         try:
-            result = conn.exec_driver_sql(str(data_sql))
-            rows = [dict(row._mapping) for row in result]
-            for row in rows:
-                print(row)
+            url_result = conn.execute(text(url_sql))
+            url_rows = [dict(r._mapping) for r in url_result]
+
+            agg_result = conn.execute(text(agg_sql))
+            agg_rows = [dict(r._mapping) for r in agg_result]
+
+            label_field = chart.get("label_field")
+            url_map = {r[label_field]: (r.get("urls") or []) for r in url_rows}
+
+            rows = []
+            for r in agg_rows:
+                r["urls"] = url_map.get(r[label_field], [])
+                rows.append(r)
+            print(rows)
         except (exc.ProgrammingError, exc.DataError) as e:
             msg = getattr(getattr(e.orig, "diag", None), "message_primary", None) or str(e.orig)
             err = ValidationError(
@@ -162,7 +186,7 @@ def inject_single_chart(chart:dict, engine:Engine) -> tuple[dict|None, list[Vali
                 err = ValidationError(
                     type="SQL Execution",
                     details=(f"The following SQL query returned no data from the database. "
-                             f"Possibly too restrictive: {data_sql}"),
+                             f"Possibly too restrictive: {agg_sql}"),
                     location="inject_data"
                 )
                 return None, [err]
@@ -195,7 +219,7 @@ def inject_spec(spec:dict, engine:Engine) -> tuple[dict|None, list[ValidationErr
     if errors:
         return None, errors
     return spec, []
-    ...
+    
     
 
 if __name__ == "__main__":

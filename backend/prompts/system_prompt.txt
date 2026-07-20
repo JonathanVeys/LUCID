@@ -111,7 +111,7 @@ A map chart's "vega_lite" block must reproduce this structure. Only "title" (if 
       "from": {
         "data": {"values": []},
         "key": "id",
-        "fields": ["value", "label"]
+        "fields": ["value", "label", "urls"]
       }
     }
   ],
@@ -414,7 +414,7 @@ User query: "Which countries report the most pig butchering scams?"
               "from": {
                 "data": {"values": []},
                 "key": "id",
-                "fields": ["value", "label"]
+                "fields": ["value", "label", "urls"]
               }
             }
           ],
@@ -489,7 +489,7 @@ User query: "Show me where sex trafficking is reported around the world"
               "from": {
                 "data": {"values": []},
                 "key": "id",
-                "fields": ["value", "label"]
+                "fields": ["value", "label", "urls"]
               }
             }
           ],

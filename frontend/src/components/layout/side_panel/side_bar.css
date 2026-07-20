@@ -1,5 +1,6 @@
 .side-bar {
     display: flex;
+    flex-direction: column;
     width: 0px;
     height: 100%;
     color: white;
@@ -11,10 +12,21 @@
     background-color: #2a1a42; 
     transition: width 0.3s ease;
     box-sizing: border-box;
+
+    overflow: scroll;
 }
 
 .side-bar.open {
     width: 15%;
-    padding: 20px;  
+    padding: 15px;  
     border: 1px solid gray;
+}
+
+
+.url {
+    color: darkgray;
+}
+
+.url:hover {
+    color: gray;
 }

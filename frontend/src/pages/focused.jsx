@@ -28,6 +28,7 @@ export default function Focused() {
           </div>
         </div>
       </div>
+      {console.log(elementData)}
       <SideBar elementData={elementData}/>
       {console.log(elementData)}
     </div>
