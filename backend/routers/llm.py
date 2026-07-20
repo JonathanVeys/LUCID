@@ -7,7 +7,7 @@ import os
 from pathlib import Path
 from sqlalchemy import create_engine
 import time
-import functools
+import json
 
 from backend.services.inject import inject_spec
 from backend.schema.introspect import load_schema, format_schema_for_prompt, format_vocab_for_prompt
@@ -28,7 +28,6 @@ if DATABASE_URL:
     db_schema = load_schema(engine)
 
 router = APIRouter(prefix="/api")
-
 
 _template = (PARENT_PATH / "prompts/system_prompt.txt").read_text(encoding="utf-8")
 SYSTEM_PROMPT = (
@@ -151,7 +150,10 @@ async def handle_query(query: QueryRequest) -> dict:
     Raises: HTTPException on upstream or internal failure
     """
     spec, attempts = generate_validated_spec(query.query)
-
+    # try:
+    #     print(json.dumps(spec, indent=2))
+    # except TypeError as e:
+    #     print(f"Could not print spec")
     return {"spec": spec, "attempts":attempts}
 
      

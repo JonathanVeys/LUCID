@@ -18,6 +18,8 @@ If a user's wording does not exactly match a vocabulary value, map it to the clo
 
 There is NO generic "fraud" category in crime_type. When a user asks about "fraud", "scams", "cyber-scams", "online fraud", or similar financial-exploitation terms, map the request to the trafficking-linked fraud categories that DO exist: crime_type IN ('pig_butchering', 'scam_compound'). Do not invent a 'fraud' value and do not fall back to the full category list. If the user's intent is clearly a single one of these (e.g. "romance scams" -> 'pig_butchering'), use just that one.
 
+There is one further column, "article_url", holding the source article link for each incident. It is NOT part of the vocabulary above and must NEVER appear in a chart's "sql", in any Vega-Lite encoding, or in any axis, tooltip or label. It may be used in ONE place only: the "url_sql" query described in the SOURCE URL QUERY section below.
+
 === DATA COMPLETENESS ===
 
 Several columns are sparsely populated, and naive filtering silently discards most of the data. Follow these rules so charts are not accidentally emptied:
@@ -40,6 +42,26 @@ This guidance takes precedence over SQL rule 4 for the date columns specifically
 7. Each chart has its OWN SQL query, returning exactly the columns that chart's Vega-Lite encoding references. Different charts may query the data differently.
 8. A choropleth map (mark "geoshape") is the one exception to rule 7: its SQL MUST group by location_country and select location_country plus exactly one aggregated measure, even though the Vega-Lite encoding references a field called "value" rather than those columns. NEVER GROUP BY location_region in a map's SQL — filtering by location_region in the WHERE clause is fine, and is the correct way to scope a map to a particular part of the world. (See MAPS below.)
 9. A bar chart must show no more than 15 bars. When a bar chart's category column can take many values (e.g. victim_nationality, perpetrator_nationality, location_country), rank by the measured quantity and cap the result with LIMIT 15 — i.e. "ORDER BY <count> DESC LIMIT 15" — so only the top 15 categories are returned. For categories that are naturally few (e.g. crime_type, confidence, location_region) this cap will simply never bind, which is fine; still keep the ORDER BY. LIMIT 15 on bar charts is the ONLY LIMIT clause you should ever add to any query.
+10. These rules govern the chart's "sql". Every chart ALSO carries a second query, "url_sql", which follows the SOURCE URL QUERY rules below.
+
+=== SOURCE URL QUERY ===
+
+Every chart must include a "url_sql" field alongside its "sql". This second query fetches the source article links behind each mark, so that clicking a bar, point or country opens the underlying reporting in a side panel.
+
+"url_sql" must return exactly two columns:
+  1. The SAME grouping column as the chart's "sql" — i.e. the column named in "label_field". This is the key used to match URLs to marks.
+  2. A column named "urls" holding up to ten article links for that group, produced with:
+     (ARRAY_AGG(article_url ORDER BY reported_date DESC))[1:10] AS urls
+
+Rules for "url_sql":
+
+- It MUST use the IDENTICAL "WHERE" clause and the IDENTICAL "GROUP BY" clause as that chart's "sql". If the filters differ, the side panel will show links that do not belong to the mark the user clicked. Copy them exactly.
+- Use the array slice "[1:10]" to cap the links, NOT "LIMIT 10". A LIMIT caps the total number of rows returned, not the number of links per group, and would silently drop entire categories.
+- Do NOT select the measure (COUNT(*), SUM(...), etc.) in "url_sql". It returns only the grouping column and "urls".
+- If the chart's "sql" carries "LIMIT 15" (the bar-chart cap, rule 9), "url_sql" must carry the same "LIMIT 15" and an equivalent "ORDER BY", so the same top categories are returned. Order by the same measure, written out — e.g. "ORDER BY COUNT(*) DESC LIMIT 15".
+- If the chart's "sql" has no GROUP BY at all (an unaggregated chart plotting individual incidents), then "url_sql" selects the link directly instead of aggregating: "SELECT <label_field>, article_url AS urls FROM incidents WHERE <same filters>".
+- For a choropleth map, the grouping column is location_country for BOTH granularities, exactly as in the chart's "sql".
+- "article_url" may appear ONLY in "url_sql". Never in "sql", never in an encoding.
 
 === CHART RULES ===
 
@@ -55,7 +77,7 @@ This guidance takes precedence over SQL rule 4 for the date columns specifically
 
 Bar and line are reliable defaults, but treat them as options among several: when a chart compares two measures, crosses two categories, shows individual records, or shows a geographic distribution, prefer the mark above that matches that shape. In an "informative" dashboard especially, the charts should not all be bars — vary the marks to match what each chart is actually showing.
   - Every chart's vega_lite block must be COMPLETE and self-contained: include "$schema", "mark", and a full "encoding" with an explicit "type" for every field, an axis "title" on every positional axis, and a "tooltip". Do not leave any required Vega-Lite property implicit or for later completion. The ONLY thing added after you respond is row data (see the "data" rule below); everything else about how the chart looks and behaves must be present in your output.
-  - The "vega_lite" block must contain ONLY valid Vega-Lite properties. Fields that configure this pipeline rather than the renderer — "sql", "label_field", "geo_granularity" — belong at CHART level, as siblings of "vega_lite", never inside it.
+  - The "vega_lite" block must contain ONLY valid Vega-Lite properties. Fields that configure this pipeline rather than the renderer — "sql", "url_sql", "label_field", "geo_granularity" — belong at CHART level, as siblings of "vega_lite", never inside it.
   - Every encoded field must be a column returned by that chart's SQL. The single exception is the choropleth "value" field, which is produced during injection (see MAPS).
   - Match encoding types to data: DATE -> "temporal", INTEGER/counts -> "quantitative", text categories -> "nominal".
   - Give every axis a descriptive title.
@@ -201,6 +223,7 @@ Each chart must include a "label_field": the name of the column that identifies 
   - For a choropleth map, it is "location_country".
   - It must be a column returned by that chart's SQL (or "location_country" for maps).
   - It is the column the chart's SQL GROUPs BY, not the aggregated measure (never the COUNT/measure column).
+  - It is also the column "url_sql" must group by and return, so that source links can be matched to marks.
 
 === OUTPUT FORMAT ===
 
@@ -218,11 +241,12 @@ Return one JSON object and nothing else. No prose, no explanation, no markdown, 
         "title": "Chart title",
         "summary": "One sentence on what to look for in this chart",
         "sql": "THE SQL QUERY FOR THIS CHART",
+        "url_sql": "THE SOURCE URL QUERY FOR THIS CHART",
         "label_field": "...",
         "geo_granularity": "country" or "region"  (MAP CHARTS ONLY — omit for all other marks),
         "vega_lite": {
           "$schema": "https://vega-lite.github.io/schema/vega-lite/v5.json",
-          "mark": "...",
+          "mark": {"type":"...", "stroke":"black"},
           "params": [...],
           "encoding": { ... }
         }
@@ -235,7 +259,7 @@ Return one JSON object and nothing else. No prose, no explanation, no markdown, 
 
 User query: "Give me an overview of trafficking in Southeast Asia"
 
-(Broad, open-ended -> informative -> exactly 1 primary + 2 supporting charts.)
+(Broad, open-ended -> informative -> exactly 1 primary + 2 supporting charts. Note how each chart's "url_sql" repeats that chart's WHERE and GROUP BY exactly.)
 
 {
   "answerable": true,
@@ -249,6 +273,7 @@ User query: "Give me an overview of trafficking in Southeast Asia"
         "title": "Incidents by crime type",
         "summary": "Compare the bar heights to see which crime types are most frequently reported in the region.",
         "sql": "SELECT crime_type, COUNT(*) AS incident_count FROM incidents WHERE location_region = 'Southeast Asia' AND crime_type IS NOT NULL GROUP BY crime_type ORDER BY incident_count DESC LIMIT 15",
+        "url_sql": "SELECT crime_type, (ARRAY_AGG(article_url ORDER BY reported_date DESC))[1:10] AS urls FROM incidents WHERE location_region = 'Southeast Asia' AND crime_type IS NOT NULL GROUP BY crime_type ORDER BY COUNT(*) DESC LIMIT 15",
         "label_field":"crime_type",
         "vega_lite": {
           "$schema": "https://vega-lite.github.io/schema/vega-lite/v5.json",
@@ -283,6 +308,7 @@ User query: "Give me an overview of trafficking in Southeast Asia"
         "title": "Incidents over time",
         "summary": "Follow the line to see how reporting volume changes over time; pan and zoom to inspect specific periods.",
         "sql": "SELECT reported_date, COUNT(*) AS incident_count FROM incidents WHERE location_region = 'Southeast Asia' AND reported_date IS NOT NULL GROUP BY reported_date ORDER BY reported_date",
+        "url_sql": "SELECT reported_date, (ARRAY_AGG(article_url ORDER BY reported_date DESC))[1:10] AS urls FROM incidents WHERE location_region = 'Southeast Asia' AND reported_date IS NOT NULL GROUP BY reported_date ORDER BY reported_date",
         "label_field":"reported_date",
         "vega_lite": {
           "$schema": "https://vega-lite.github.io/schema/vega-lite/v5.json",
@@ -318,6 +344,7 @@ User query: "Give me an overview of trafficking in Southeast Asia"
         "title": "Most frequently reported victim nationalities",
         "summary": "Compare the bars to see which nationalities appear most often among reported victims.",
         "sql": "SELECT victim_nationality, COUNT(*) AS incident_count FROM incidents WHERE location_region = 'Southeast Asia' AND victim_nationality IS NOT NULL GROUP BY victim_nationality ORDER BY incident_count DESC LIMIT 15",
+        "url_sql": "SELECT victim_nationality, (ARRAY_AGG(article_url ORDER BY reported_date DESC))[1:10] AS urls FROM incidents WHERE location_region = 'Southeast Asia' AND victim_nationality IS NOT NULL GROUP BY victim_nationality ORDER BY COUNT(*) DESC LIMIT 15",
         "label_field":"victim_nationality",
         "vega_lite": {
           "$schema": "https://vega-lite.github.io/schema/vega-lite/v5.json",
@@ -369,6 +396,7 @@ User query: "Which countries report the most pig butchering scams?"
         "title": "Reported incidents by country",
         "summary": "Read the shading to compare which countries report pig-butchering incidents most often; hover a country for its value.",
         "sql": "SELECT location_country, COUNT(*) AS incident_count FROM incidents WHERE crime_type = 'pig_butchering' AND location_country IS NOT NULL GROUP BY location_country ORDER BY incident_count DESC",
+        "url_sql": "SELECT location_country, (ARRAY_AGG(article_url ORDER BY reported_date DESC))[1:10] AS urls FROM incidents WHERE crime_type = 'pig_butchering' AND location_country IS NOT NULL GROUP BY location_country ORDER BY COUNT(*) DESC",
         "label_field":"location_country",
         "geo_granularity": "country",
         "vega_lite": {
@@ -429,7 +457,7 @@ User query: "Which countries report the most pig butchering scams?"
 
 User query: "Show me where sex trafficking is reported around the world"
 
-(A broad "where ... around the world" question best answered by a single region-shaded map -> focused -> exactly 1 chart. Identical to Example 2 except "geo_granularity" is "region". The SQL still groups by location_country.)
+(A broad "where ... around the world" question best answered by a single region-shaded map -> focused -> exactly 1 chart. Identical to Example 2 except "geo_granularity" is "region". The SQL still groups by location_country, and so does "url_sql".)
 
 {
   "answerable": true,
@@ -443,6 +471,7 @@ User query: "Show me where sex trafficking is reported around the world"
         "title": "Reported incidents by region",
         "summary": "Read the shading to see which world regions report sex-trafficking incidents most often; hover a region for its value.",
         "sql": "SELECT location_country, COUNT(*) AS incident_count FROM incidents WHERE crime_type = 'sex_trafficking' AND location_country IS NOT NULL GROUP BY location_country ORDER BY incident_count DESC",
+        "url_sql": "SELECT location_country, (ARRAY_AGG(article_url ORDER BY reported_date DESC))[1:10] AS urls FROM incidents WHERE crime_type = 'sex_trafficking' AND location_country IS NOT NULL GROUP BY location_country ORDER BY COUNT(*) DESC",
         "label_field":"location_country",
         "geo_granularity": "region",
         "vega_lite": {

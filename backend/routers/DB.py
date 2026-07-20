@@ -158,6 +158,20 @@ if __name__ == "__main__":
             connect_args={"sslmode": "require"},
         )
         with engine.connect() as conn:
-            rows = conn.execute(text("""SELECT crime_type, COUNT(*) AS n FROM incidents GROUP BY crime_type ORDER BY n DESC;"""))
-            for row in rows:
+            url_sql = """SELECT location_country, (ARRAY_AGG(article_url ORDER BY reported_date DESC))[1:10] AS urls FROM incidents WHERE location_country IS NOT NULL GROUP BY location_country ORDER BY COUNT(*) DESC"""
+            agg_sql = """SELECT location_country, COUNT(*) AS incident_count FROM incidents WHERE location_country IS NOT NULL GROUP BY location_country ORDER BY incident_count DESC"""
+
+            url_data = {r[0]: r[1] for r in conn.execute(text(url_sql))}
+            agg_data = {r[0]: r[1] for r in conn.execute(text(agg_sql))}
+
+
+            merged_data = [
+                {
+                    "location_country":name,
+                    "incident_count":count,
+                    "urls":url_data.get(name, [])
+                    } for name, count in agg_data.items()
+            ]
+
+            for row in merged_data:
                 print(row)

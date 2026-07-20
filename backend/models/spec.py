@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field, ValidationError as PydanticValidationError, TypeAdapter
-from typing import Any, Literal, Annotated, Union
+from typing import Any, Literal, Annotated, Union, Optional
 from enum import Enum
 
 from backend.errors.validation_error import ValidationError
@@ -18,6 +18,8 @@ class Chart(BaseModel):
     title:str=Field(min_length=1)
     summary:str=Field(min_length=1)
     sql:str=Field(min_length=1)
+    url_sql:str=Field(min_length=1)
+    geo_granularity:Optional[Literal["country","region"]] = None
     label_field:str=Field(min_length=1)
     vega_lite:dict[str,Any]
 

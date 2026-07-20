@@ -3,7 +3,7 @@ from unittest.mock import patch
 
 import pytest
 
-from backend.routers.llm import _generate_validated_spec
+from backend.routers.llm import generate_validated_spec
 from backend.routers.llm import inference as _real_inference
 
 
@@ -116,7 +116,7 @@ def test_heals_from_invalid_spec():
     spec. Exercises the validate-failure healing path."""
     calls = {"n": 0}
     with patch(PATCH_TARGET, side_effect=seed_then_real(INVALID_SPEC_DESCRIPTION, calls)):
-        result, errors, _ = _generate_validated_spec("a realistic, answerable query")
+        result, errors = generate_validated_spec("a realistic, answerable query")
 
     assert errors is None, f"model failed to heal an invalid spec; final errors: {errors}"
     # assert result["answerable"] is True
@@ -130,7 +130,7 @@ def test_heals_from_malformed_json():
     which is a different branch from the invalid-spec case above."""
     calls = {"n": 0}
     with patch(PATCH_TARGET, side_effect=seed_then_real(MALFORMED_JSON_CONTENT, calls)):
-        result, errors, _ = _generate_validated_spec("a realistic, answerable query")
+        result, errors = generate_validated_spec("a realistic, answerable query")
 
     assert errors is None, f"model failed to heal malformed JSON; final errors: {errors}"
     # assert result["answerable"] is True
@@ -148,7 +148,7 @@ def test_succeeds_on_first_attempt():
     extra model call when the first response is already good."""
     with patch(PATCH_TARGET) as mock_inf:
         mock_inf.side_effect = [VALID_CONTENT]
-        result, errors, _ = _generate_validated_spec("a realistic, answerable query")
+        result, errors = generate_validated_spec("a realistic, answerable query")
 
     assert errors is None
     # assert result["answerable"] is True
@@ -160,7 +160,7 @@ def test_exhausts_after_max_retry():
     rather than a spec, stopping at exactly max_retry calls."""
     with patch(PATCH_TARGET) as mock_inf:
         mock_inf.side_effect = [INVALID_SPEC_DESCRIPTION] * 3
-        result, errors, _ = _generate_validated_spec("a realistic, answerable query", MAX_RETRY=3)
+        result, errors = generate_validated_spec("a realistic, answerable query", MAX_RETRY=3)
 
     assert result is None
     assert errors  # non-empty list of validation errors
@@ -172,7 +172,7 @@ def test_unanswerable_returns_immediately():
     pass, with no retries and no error state."""
     with patch(PATCH_TARGET) as mock_inf:
         mock_inf.side_effect = [UNANSWERABLE_CONTENT]
-        result, errors, _ = _generate_validated_spec("an impossible query")
+        result, errors = generate_validated_spec("an impossible query")
 
     assert errors is None
     # assert result["answerable"] is False

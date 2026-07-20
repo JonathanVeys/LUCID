@@ -140,12 +140,15 @@ def inject_single_chart(chart:dict, engine:Engine) -> tuple[dict|None, list[Vali
     
     '''
     with engine.connect() as conn:
-        sql_query = chart.get("sql")
+        data_sql = chart.get("sql")
+        url_sql = chart.get("url_sql")
         vega_lite = chart.get("vega_lite", {})  
 
         try:
-            result = conn.exec_driver_sql(str(sql_query))
+            result = conn.exec_driver_sql(str(data_sql))
             rows = [dict(row._mapping) for row in result]
+            for row in rows:
+                print(row)
         except (exc.ProgrammingError, exc.DataError) as e:
             msg = getattr(getattr(e.orig, "diag", None), "message_primary", None) or str(e.orig)
             err = ValidationError(
@@ -159,7 +162,7 @@ def inject_single_chart(chart:dict, engine:Engine) -> tuple[dict|None, list[Vali
                 err = ValidationError(
                     type="SQL Execution",
                     details=(f"The following SQL query returned no data from the database. "
-                             f"Possibly too restrictive: {sql_query}"),
+                             f"Possibly too restrictive: {data_sql}"),
                     location="inject_data"
                 )
                 return None, [err]
