@@ -172,7 +172,6 @@ def inject_single_chart(chart:dict, engine:Engine) -> tuple[dict|None, list[Vali
             for r in agg_rows:
                 r["urls"] = url_map.get(r[label_field], [])
                 rows.append(r)
-            print(rows)
         except (exc.ProgrammingError, exc.DataError) as e:
             msg = getattr(getattr(e.orig, "diag", None), "message_primary", None) or str(e.orig)
             err = ValidationError(

@@ -56,6 +56,7 @@ function Landing() {
                     onChange={(e) => setQuery(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
                     disabled={loading}
+                    spellCheck="true"
                 />
                 <button className="prompt-submit" onClick={handleSubmit} disabled={loading}>{loading ? <Spinner /> : "→"}</button>
             </div>

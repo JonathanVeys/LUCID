@@ -36,6 +36,10 @@ SYSTEM_PROMPT = (
     .replace("{COLUMN_INFO}", format_vocab_for_prompt(engine))
 )
 
+client = OpenAI(
+    api_key=os.environ["ELM_API_KEY"]
+)
+
 
 def build_initial_prompt(prompt: str) -> list[dict]:
     return [
@@ -65,10 +69,6 @@ def inference(query, temperature:float=1, model="gpt-4-turbo"):
     Output: dict with the model's response text
     Raises: HTTPException on upstream or internal failure
     """
-    client = OpenAI(
-        api_key=os.environ["ELM_API_KEY"]
-    )
-
     try:
         res = client.chat.completions.create(
             messages=query, 
@@ -95,7 +95,6 @@ def generate_validated_spec(query:str, db_schema=db_schema, MAX_RETRY=1) -> tupl
     '''
     
     '''
-    start_time = time.perf_counter()
     print(f"INFO: generate_validated_spec started | query={query!r}")
 
     messages = build_initial_prompt(query)
@@ -103,14 +102,10 @@ def generate_validated_spec(query:str, db_schema=db_schema, MAX_RETRY=1) -> tupl
     last_errors = []
 
     for attempt in range(MAX_RETRY+1):
+        start_time = time.perf_counter()
         print(f"INFO: Inference attempt {attempt}" if attempt>0 else f"INFO: Initial inference")
         content = inference(messages)
         spec, err = parse_model_response(content)
-
-        # try:
-        #     print(json.dumps(spec, indent=2))
-        # except:
-        #     print("Failed to print error spec")
 
         if spec and not err:
             ok, err = evaluate_response(spec, db_schema)

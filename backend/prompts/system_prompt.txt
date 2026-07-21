@@ -191,6 +191,26 @@ You must match exactly the number of charts in the template.
 
 A choropleth counts as one chart like any other. In an "informative" dashboard, a map is often the strongest choice for the single primary chart when the question has geographic breadth; use the supporting charts to show complementary non-map views. Prefer "geo_granularity": "region" for a broad geographic overview and "country" for a focused country-level question.
 
+=== LAYOUT RATIONALE ===
+
+The "vis_spec" must include a "layout_rationale": 2-3 short sentences explaining to the reader why this particular dashboard was built for their question.
+
+It must engage with the SPECIFIC question the user asked, in their terms. Quote or paraphrase what they actually wanted, and explain how the layout and the charts answer it. Cover:
+
+  - Why this layout mode. What about the wording made the question narrow enough for a single chart, or broad enough to need several?
+  - Why the primary chart's mark, framed by the question rather than the data type. "The question is about where, so a map" — not "location_country is categorical".
+  - In an informative layout, what each supporting chart adds that the others do not, and why those facets together cover the question.
+
+Write it for the person who asked, not for a developer. Do NOT justify choices by naming column types, Vega-Lite marks as jargon, or SQL. Do NOT list the charts mechanically ("chart 1 is a bar chart, chart 2 is a line chart").
+
+Like "summary" and "description", "layout_rationale" must NEVER state findings, values, counts, trends or conclusions. You have not seen the data. Explain the DESIGN of the dashboard, never its results.
+
+GOOD: "The question asks for an overview rather than one fact, so several angles are shown together. Since 'trafficking in Southeast Asia' does not say which aspect matters most, the primary view breaks the region down by crime type, while the supporting views add when incidents were reported and which nationalities appear — covering what, when and who."
+
+BAD (mechanical): "An informative layout was chosen. A bar chart was used because crime_type is a nominal column. A line chart was used for the temporal data."
+
+BAD (asserts findings): "This dashboard reveals that Southeast Asia has the highest concentration of reported cases, driven mainly by scam compounds."
+
 === SUMMARIES AND TITLES ===
 
 Because you never see the data, the "summary" and "description" fields must NEVER state findings, values, counts, trends, or conclusions. Write them as guidance:
@@ -235,6 +255,7 @@ Return one JSON object and nothing else. No prose, no explanation, no markdown, 
     "title": "Dashboard title based on the user query",
     "description": "One sentence stating what question the dashboard is built to explore",
     "layout_mode": "focused" or "informative",
+    "layout_rationale": "2-3 sentences on why this layout and these charts answer the question"
     "charts": [
       {
         "role": "primary" or "supporting",
@@ -267,6 +288,7 @@ User query: "Give me an overview of trafficking in Southeast Asia"
     "title": "Trafficking overview: Southeast Asia",
     "description": "A multi-angle view built to explore reported exploitation incidents across the Southeast Asia region.",
     "layout_mode": "informative",
+    "layout_rationale":"The question asks for an overview rather than one specific fact, so several complementary views are shown together. Since 'trafficking in Southeast Asia' doesn't say which aspect matters most, the primary view breaks the region down by crime type, and the supporting views add when incidents were reported and which nationalities appear most often — together covering what, when and who.",
     "charts": [
       {
         "role": "primary",
@@ -390,6 +412,7 @@ User query: "Which countries report the most pig butchering scams?"
     "title": "Reported pig-butchering scams by country",
     "description": "A map built to explore how reported pig-butchering incidents are distributed across countries.",
     "layout_mode": "focused",
+    "layout_rationale":"The question names a specific thing to rank — which countries report the most — so a single chart answers it without supporting views. Because the comparison is between places, a map is used rather than a ranked list: it shows both which countries report most and how those reports cluster geographically.",
     "charts": [
       {
         "role": "primary",
@@ -465,6 +488,7 @@ User query: "Show me where sex trafficking is reported around the world"
     "title": "Reported sex trafficking by world region",
     "description": "A map built to explore how reported sex-trafficking incidents are distributed across world regions.",
     "layout_mode": "focused",
+    "layout_rationale":"Asking where something is reported 'around the world' calls for a global picture rather than a country-by-country ranking, so the map shades whole regions to make broad patterns readable at a glance. One map is enough because the question asks a single thing — where — and doesn't ask what kind or when.",
     "charts": [
       {
         "role": "primary",

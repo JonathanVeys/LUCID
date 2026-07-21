@@ -4,7 +4,7 @@ export default function SideBar({ elementData }) {
   const urls = elementData?.urls ?? [];
   const listItems = urls.map((url) =>
     <li>
-      <a href={url} className="url">{url}</a>
+      <a href={url} className="url" target="_blank">{url}</a>
     </li>
   );
 

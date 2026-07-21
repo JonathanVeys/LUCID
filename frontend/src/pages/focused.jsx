@@ -10,6 +10,7 @@ export default function Focused() {
   const visSpec = location.state?.vis_spec;
   const title = visSpec?.title || "Focused Dashboard";
   const description = visSpec?.description || "This is a description";
+  const rationale = visSpec?.layout_rationale || "This is the model's rationale";
   const charts = visSpec?.charts ?? [];
   const primaries = charts.filter((c) => c.role === "primary");
 
@@ -20,7 +21,8 @@ export default function Focused() {
       <div className="dashboard-div">
         <div className="metadata-div">
           <h1 className="title">{title}</h1>
-          <p className="description"><b>Description:</b> {description}</p>
+          <p className="description"><b>Description:</b> {description} </p>
+          <p className="description"><b>Model Rationale:</b> {rationale} </p>
         </div>
         <div className="charts-div">
           <div className="primary-chart">
