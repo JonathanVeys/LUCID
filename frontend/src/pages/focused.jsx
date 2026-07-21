@@ -21,6 +21,7 @@ export default function Focused() {
       <div className="dashboard-div">
         <div className="metadata-div">
           <h1 className="title">{title}</h1>
+          <hr className="rule"></hr>
           <p className="description"><b>Description:</b> {description} </p>
           <p className="description"><b>Model Rationale:</b> {rationale} </p>
         </div>
@@ -30,9 +31,7 @@ export default function Focused() {
           </div>
         </div>
       </div>
-      {console.log(elementData)}
-      <SideBar elementData={elementData}/>
-      {console.log(elementData)}
+      <SideBar elementData={elementData} onClose={() => setElementData(null)}/>
     </div>
   )
 }

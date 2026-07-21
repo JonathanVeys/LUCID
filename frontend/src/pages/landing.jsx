@@ -14,6 +14,7 @@ function Landing() {
     const ROUTES = {
         focused: "/focused",
         informative: "/informative",
+        scalar: "/scalar"
     };
 
     const handleSubmit = async () => {

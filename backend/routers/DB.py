@@ -158,20 +158,24 @@ if __name__ == "__main__":
             connect_args={"sslmode": "require"},
         )
         with engine.connect() as conn:
-            url_sql = """SELECT location_country, (ARRAY_AGG(article_url ORDER BY reported_date DESC))[1:10] AS urls FROM incidents WHERE location_country IS NOT NULL GROUP BY location_country ORDER BY COUNT(*) DESC"""
-            agg_sql = """SELECT location_country, COUNT(*) AS incident_count FROM incidents WHERE location_country IS NOT NULL GROUP BY location_country ORDER BY incident_count DESC"""
+            SQL = """
+SELECT
+  COUNT(*) AS all_rows,
+  COUNT(*) FILTER (WHERE location_region = 'Southeast Asia') AS sea,
+  COUNT(*) FILTER (WHERE crime_type = 'sex_trafficking') AS sex_traff,
+  COUNT(*) FILTER (WHERE reported_date >= '2020-01-01'
+                     AND reported_date <= '2025-12-31') AS in_window,
+  COUNT(*) FILTER (WHERE location_region = 'Southeast Asia'
+                     AND crime_type = 'sex_trafficking') AS sea_and_type,
+  COUNT(*) FILTER (WHERE location_region = 'Southeast Asia'
+                     AND crime_type = 'sex_trafficking'
+                     AND reported_date >= '2020-01-01'
+                     AND reported_date <= '2025-12-31') AS all_three
+FROM incidents;
+"""
 
-            url_data = {r[0]: r[1] for r in conn.execute(text(url_sql))}
-            agg_data = {r[0]: r[1] for r in conn.execute(text(agg_sql))}
+            value = conn.execute(text(SQL))
 
 
-            merged_data = [
-                {
-                    "location_country":name,
-                    "incident_count":count,
-                    "urls":url_data.get(name, [])
-                    } for name, count in agg_data.items()
-            ]
-
-            for row in merged_data:
+            for row in value:
                 print(row)

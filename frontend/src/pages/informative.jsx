@@ -21,6 +21,7 @@ export default function Informative() {
     <div className="informative-div">
       <div className="metadata-div">
         <h1 className="title">{title}</h1>
+        <hr className="rule"></hr>
         <p className="description"><b>Description:</b> {description}</p>
         <p className="description"><b>Model Rationale:</b> {rationale} </p>
       </div>
@@ -34,7 +35,7 @@ export default function Informative() {
           <ChartCard chart={supportives[1]} fallbackTitle="Supporting Chart Two" onSelect={setElementData}/>
         </div>
       </div>
-      <SideBar elementData={elementData}/>
+      <SideBar elementData={elementData} onClose={() => setElementData(null)}/>
       {console.log(elementData)}
     </div>
   );

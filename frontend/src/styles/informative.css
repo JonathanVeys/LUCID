@@ -83,3 +83,7 @@ html, body, #root {
 }
 
 .chart-placeholder { margin: auto; color: dimgray; }
+
+.rule {
+  width: 100%;
+}

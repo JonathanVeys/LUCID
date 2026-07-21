@@ -107,8 +107,24 @@ def handle_choropleth_inject(chart:dict, rows:list) -> tuple[dict|None, list[Val
     '''
     
     '''
-    value_field = list(rows[0].keys())[1]
+    label_field = chart.get("label_field")
+    # print(rows[0].items())
+
+    value_field = next(
+        (k for k, v in rows[0].items()
+        if k not in (label_field, "urls") and isinstance(v, (int, float))),
+        None
+    )
+    if value_field is None:
+        return None, [ValidationError(
+            type="SQL Execution",
+            details=(f"No numeric measure column found in the query output: "
+                    f"{sorted(rows[0].keys())}. A map's SQL must return "
+                    f"location_country and one numeric aggregate."))]
+    
+    # value_field = list(rows[0].keys())[1]
     granularity = chart.get("geo_granularity")
+    # print(f"VALUE FIELD: {value_field}")
 
     if granularity == "country":
         data, errs = handle_countries(chart, rows, value_field)    
@@ -202,116 +218,119 @@ def inject_single_chart(chart:dict, engine:Engine) -> tuple[dict|None, list[Vali
     return injected_chart, []
 
 
+def handle_scalar(spec:dict, engine:Engine) -> tuple[dict|None, list[ValidationError]]:
+    '''
+    
+    '''
+    url_sql = spec["vis_spec"]["url_sql"]
+    agg_sql = spec["vis_spec"]["sql"]
+    with engine.connect() as conn:
+        try:
+                urls = conn.execute(text(url_sql)).scalar_one() or []
+                value = conn.execute(text(agg_sql)).scalar_one()
+
+        except (exc.ProgrammingError, exc.DataError) as e:
+            msg = getattr(getattr(e.orig, "diag", None), "message_primary", None) or str(e.orig)
+            err = ValidationError(
+                type="SQL Execution",
+                details=f"The query failed: {msg}",
+                location="inject_data"
+            )
+            return None, [err]
+        
+        spec["vis_spec"]["value"] = value
+        spec["vis_spec"]["urls"] = urls
+    return spec, []
+
+
 def inject_spec(spec:dict, engine:Engine) -> tuple[dict|None, list[ValidationError]]:
     '''
     
     '''
     errors = []
     vis_spec = spec.get("vis_spec", {})
-    charts = vis_spec.get("charts")
-    for idx, chart in enumerate(charts):
-        injected_chart, errs = inject_single_chart(chart, engine)
+    if vis_spec["layout_mode"] == "scalar":
+        injected_spec, errs = handle_scalar(spec, engine)
         if errs:
             errors.extend(errs)
-            continue
-        charts[idx] = injected_chart
-    if errors:
-        return None, errors
-    return spec, []
-    
+            return None, errors
+        else: 
+            return spec, []
+        
+    else:
+        charts = vis_spec.get("charts")
+        for idx, chart in enumerate(charts):
+            injected_chart, errs = inject_single_chart(chart, engine)
+            if errs:
+                errors.extend(errs)
+                continue
+            charts[idx] = injected_chart
+        if errors:
+            return None, errors
+        return spec, []
+     
     
 
 if __name__ == "__main__":
-    TEST_SPEC =  '''
-    {
-        "answerable": "True",
-        "vis_spec": {
-            "title": "Global Distribution of Reported Trafficking Incidents",
-            "description": "A dashboard built to explore where reported exploitation incidents occur and which crime types are most common.",
-            "layout_mode": "informative",
-            "charts": [
-                {
-                    "role": "primary",
-                    "title": "Reported incidents by region",
-                    "summary": "Read the shading to see which world regions report incidents most often; hover a region for its value.",
-                    "sql": "SELECT location_country, COUNT(*) AS incident_count FROM incidents WHERE location_country IS NOT NULL GROUP BY location_country ORDER BY incident_count DESC LIMIT 1000",
-                    "geo_granularity": "region",
-                    "label_field":"location_country",
-                    "vega_lite": {
-                        "$schema": "https://vega-lite.github.io/schema/vega-lite/v5.json",
-                        "width": 720,
-                        "height": 400,
-                        "projection": {"type": "equalEarth"},
-                        "data": {
-                            "url": "https://cdn.jsdelivr.net/npm/vega-datasets@2/data/world-110m.json",
-                            "format": {"type": "topojson", "feature": "countries"}
-                        },
-                        "transform": [
-                            {
-                            "lookup": "id",
-                            "from": {
-                                "data": {"values": []},
-                                "key": "id",
-                                "fields": ["value"]
-                            }
-                            }
-                        ],
-                        "mark": {"type": "geoshape", "stroke": "white", "strokeWidth": 0.4},
-                        "encoding": {
-                            "color": {
-                                "field": "value",
-                                "type": "quantitative",
-                                "scale": {"scheme": "yelloworangered"},
-                                "legend": {"title": "Reported incidents"}
-                                },
-                            "tooltip": [
-                                {"field": "value", "type": "quantitative", "title": "Reported incidents"}
-                                ]
-                        },
-                        "config": {"view": {"stroke": null}, "mark": {"invalid": null}}
-                        }
-                    },
-                {
-                    "role": "supporting",
-                    "title": "Incidents by crime type",
-                    "summary": "Compare the bar heights to see which crime types are most frequently reported.",
-                    "sql": "SELECT crime_type, COUNT(*) AS incident_count FROM incidents WHERE crime_type IS NOT NULL GROUP BY crime_type ORDER BY incident_count DESC LIMIT 1000",
-                    "label_field": "crime_type",
-                    "vega_lite": {
-                        "$schema": "https://vega-lite.github.io/schema/vega-lite/v5.json",
-                        "mark": {"type": "bar", "stroke": "black"},
-                        "encoding": {
-                            "x": {"field": "crime_type", "type": "nominal", "axis": {"title": "Crime type"}, "sort": "-y"},
-                            "y": {"field": "incident_count", "type": "quantitative", "axis": {"title": "Number of incidents"}},
-                            "tooltip": [
-                            {"field": "crime_type", "type": "nominal"},
-                            {"field": "incident_count", "type": "quantitative"}
-                            ]
-                        }
-                    }
-                }
+    GOOD_MAP_SPEC = '''
+{
+  "answerable": true,
+  "vis_spec": {
+    "title": "Reported incidents by country",
+    "description": "A map built to explore how reported incidents are distributed across countries.",
+    "layout_mode": "focused",
+    "layout_rationale": "The question compares places, so a map shows both the ranking and how reports cluster geographically.",
+    "charts": [
+      {
+        "role": "primary",
+        "title": "Reported incidents by country",
+        "summary": "Read the shading to compare which countries report incidents most often.",
+        "sql": "SELECT location_country, COUNT(*) AS incident_count FROM incidents WHERE location_country IS NOT NULL GROUP BY location_country ORDER BY incident_count DESC",
+        "url_sql": "SELECT location_country, (ARRAY_AGG(article_url ORDER BY reported_date DESC))[1:10] AS urls FROM incidents WHERE location_country IS NOT NULL GROUP BY location_country ORDER BY COUNT(*) DESC",
+        "label_field": "location_country",
+        "geo_granularity": "country",
+        "vega_lite": {
+          "$schema": "https://vega-lite.github.io/schema/vega-lite/v5.json",
+          "width": "container",
+          "height": "container",
+          "projection": {"type": "equalEarth"},
+          "data": {
+            "url": "https://cdn.jsdelivr.net/npm/vega-datasets@2/data/world-110m.json",
+            "format": {"type": "topojson", "feature": "countries"}
+          },
+          "transform": [
+            {"lookup": "id", "from": {"data": {"values": []}, "key": "id", "fields": ["value", "label", "urls"]}}
+          ],
+          "params": [
+            {"name": "select", "select": "point"},
+            {"name": "highlight", "select": {"type": "point", "on": "pointerover"}}
+          ],
+          "mark": {"type": "geoshape", "stroke": "black", "strokeWidth": 0.4},
+          "encoding": {
+            "color": {"field": "value", "type": "quantitative", "scale": {"scheme": "yelloworangered", "type": "log"}, "legend": {"title": "Reported incidents"}},
+            "tooltip": [
+              {"field": "label", "type": "nominal", "title": "Location"},
+              {"field": "value", "type": "quantitative", "title": "Reported incidents"}
             ]
+          },
+          "config": {"view": {"stroke": null}, "mark": {"invalid": null}}
         }
-    }'''
+      }
+    ]
+  }
+}
+'''
 
-    # load_dotenv()
-    # DATABASE_URL = os.getenv("DATABASE_URL")
-    # if DATABASE_URL:
-    #     engine = create_engine(DATABASE_URL)
+    BAD_MAP_SPEC = GOOD_MAP_SPEC.replace(
+        "SELECT location_country, COUNT(*) AS incident_count FROM incidents WHERE location_country IS NOT NULL GROUP BY location_country ORDER BY incident_count DESC",
+        "SELECT location_country, crime_type, COUNT(*) AS incident_count FROM incidents WHERE location_country IS NOT NULL AND crime_type IS NOT NULL GROUP BY location_country, crime_type ORDER BY incident_count DESC"
+    )
 
-    # spec, err = parse_model_response(TEST_SPEC)
-    # if spec:
-    #     vis_spec = spec.get("vis_spec", {})
-    # charts = vis_spec.get("charts", [])
-    # for chart in charts:
-    #     chart, err = inject_data(chart, engine)
-    #     if err:
-    #         print(err)
-    #     elif not err:
-    #         print("✅ Success")
-    #         with open("debug_chart.json", "w") as f:
-    #             json.dump(chart, f, indent=2)
-    #     break
+    load_dotenv()
+    DATABASE_URL = os.getenv("DATABASE_URL")
+    if DATABASE_URL:
+        engine = create_engine(DATABASE_URL)
+
 
 
 

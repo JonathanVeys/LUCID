@@ -1,0 +1,98 @@
+.scalar-div {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+    box-sizing: border-box;
+
+    color: white;
+}
+
+.metadata-div {
+    flex: 0 0 auto;             
+    padding: 10px 25px;
+}
+
+.data-div {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;              
+    gap: 25px;
+    padding: 10px 25px;
+    box-sizing: border-box;
+}
+
+.title {
+    color: white; 
+    padding-bottom: 25px;
+}
+
+.description,
+.rationale{ 
+    margin: 4px 0 0; 
+    color: gray; 
+}
+
+
+.scalar-value {
+    font-size: 70px;
+    line-height: 1;
+}
+
+
+.scalar-unit {
+    font-size: 30px;
+    margin: 0;
+}
+
+.rule {
+    width: 100%;
+}
+
+
+.btn.urls {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 2px solid gray;
+    width: fit-content;
+    padding: 5px;
+    border-radius: 10px;
+
+    background: rgba(255, 255, 255, 0.25);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+.btn.urls::before {
+    content: "";
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    background-color: currentColor;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3Cpolyline points='15 3 21 3 21 9'/%3E%3Cline x1='10' y1='14' x2='21' y2='3'/%3E%3C/svg%3E") center / contain no-repeat;
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3Cpolyline points='15 3 21 3 21 9'/%3E%3Cline x1='10' y1='14' x2='21' y2='3'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
+.btn.urls:empty::before {
+    display: none;
+}
+
+
+.scalar-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: 0;
+    padding: 40px;
+    color: white;
+    background: rgba(255, 255, 255, 0.5);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 12px;
+    box-sizing: border-box;
+}

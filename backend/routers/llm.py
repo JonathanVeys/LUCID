@@ -91,7 +91,7 @@ def inference(query, temperature:float=1, model="gpt-4-turbo"):
 
 
 
-def generate_validated_spec(query:str, db_schema=db_schema, MAX_RETRY=1) -> tuple[dict, list[dict]]:
+def generate_validated_spec(query:str, db_schema=db_schema, MAX_RETRY=3) -> tuple[dict, list[dict]]:
     '''
     
     '''

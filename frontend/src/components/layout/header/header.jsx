@@ -14,6 +14,7 @@ export default function Header({ onAboutClick }) {
             <button onClick={onAboutClick} className="btn">About</button>
             <Link to="/informative" className="btn">Informative</Link>
             <Link to="/focused" className="btn">Focused</Link>
+            <Link to="/scalar" className="btn">Scalar</Link>
         </div>
     )
 }

@@ -5,6 +5,7 @@ import Informative from "./pages/informative";
 import Focused from "./pages/focused";
 import Layout from "./components/layout/layout";
 import About from "./pages/about";
+import Scalar from "./pages/scalar";
 
 import "./styles/global.css";
 
@@ -18,6 +19,7 @@ export default function App() {
           <Route path="/informative" element={<Informative />} />
           <Route path="/focused" element={<Focused />} />
           <Route path="/about" element={<About />} />
+          <Route path="/scalar" element={<Scalar />} />
         </Route>
       </Routes>
     </BrowserRouter>

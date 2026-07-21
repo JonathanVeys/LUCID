@@ -1,18 +1,29 @@
-from pydantic import BaseModel, Field, ValidationError as PydanticValidationError, TypeAdapter
+from pydantic import BaseModel, Field, ValidationError as PydanticValidationError, TypeAdapter, ConfigDict
 from pydantic_core import ErrorDetails
 from typing import Any, Literal, Annotated, Union, Optional
 from enum import Enum
 
 from backend.errors.validation_error import ValidationError
 
+from backend.validation.component_validation.parse_model_response import parse_model_response
 
 class LayoutMode(str, Enum):
     focused="focused"
     informative="informative"
+    scalar="scalar"
 
 class ChartRole(str, Enum):
     primary="primary"
     supporting="supporting"
+
+class MarkSpec(BaseModel):
+    model_config = ConfigDict(extra="allow")     
+    type: Literal["bar", "line", "area", "point", "rect", "arc", "geoshape"]
+
+class VegaLite(BaseModel):
+    model_config = ConfigDict(extra="allow")    
+    mark: MarkSpec
+    encoding: dict[str, Any]
 
 class Chart(BaseModel):
     role:ChartRole
@@ -22,18 +33,28 @@ class Chart(BaseModel):
     url_sql:str=Field(min_length=1)
     geo_granularity:Optional[Literal["country","region"]] = None
     label_field:str=Field(min_length=1)
-    vega_lite:dict[str,Any]
+    vega_lite:VegaLite
 
-class VisSpec(BaseModel):
+class ChartSpec(BaseModel):
+    layout_mode:Literal[LayoutMode.focused, LayoutMode.informative]
     title:str=Field(min_length=1)
     description:str=Field(min_length=1)
-    layout_mode:LayoutMode
     layout_rationale:str=Field(min_length=1)
     charts:list[Chart]=Field(min_length=1)
 
+class ScalarSpec(BaseModel):
+    layout_mode:Literal["scalar"]
+    title:str=Field(min_length=1)
+    unit:str=Field(min_length=1)
+    qualifier:str=Field(min_length=1)
+    sql:str=Field(min_length=1)
+    url_sql:str=Field(min_length=1)
+
+VisSpecUnion = Annotated[Union[ScalarSpec, ChartSpec], Field(discriminator="layout_mode")]
+
 class AnsweredResponse(BaseModel):
     answerable:Literal[True]
-    vis_spec:VisSpec
+    vis_spec:VisSpecUnion
 
 class UnansweredResponse(BaseModel):
     answerable:Literal[False]
@@ -93,4 +114,48 @@ def validate_spec(spec: dict) -> tuple[UnansweredResponse | AnsweredResponse | N
 
 
 
- 
+if __name__ == "__main__":
+    BAD_MARK_SPEC = '''
+{
+  "answerable": true,
+  "vis_spec": {
+    "title": "Incidents by crime type",
+    "description": "A view built to explore which crime types are reported most often.",
+    "layout_mode": "focused",
+    "layout_rationale": "The question names one breakdown, so a single chart answers it.",
+    "charts": [
+      {
+        "role": "primary",
+        "title": "Incidents by crime type",
+        "summary": "Compare the bar heights to see which crime types are most reported.",
+        "sql": "SELECT crime_type, COUNT(*) AS incident_count FROM incidents WHERE crime_type IS NOT NULL GROUP BY crime_type ORDER BY incident_count DESC LIMIT 15",
+        "url_sql": "SELECT crime_type, (ARRAY_AGG(article_url ORDER BY reported_date DESC))[1:10] AS urls FROM incidents WHERE crime_type IS NOT NULL GROUP BY crime_type ORDER BY COUNT(*) DESC LIMIT 15",
+        "label_field": "crime_type",
+        "vega_lite": {
+          "$schema": "https://vega-lite.github.io/schema/vega-lite/v5.json",
+          "mark": "bar",
+          "params": [
+            {"name": "select", "select": "point"},
+            {"name": "highlight", "select": {"type": "point", "on": "pointerover"}}
+          ],
+          "encoding": {
+            "x": {"field": "crime_type", "type": "nominal", "axis": {"title": "Crime type"}},
+            "y": {"field": "incident_count", "type": "quantitative", "axis": {"title": "Number of incidents"}}
+          }
+        }
+      }
+    ]
+  }
+}
+'''
+    spec, err = parse_model_response(BAD_MARK_SPEC)
+    if err:
+        print(err)
+    else:
+        if spec:
+            ok, errs = validate_spec(spec)
+        if not ok:
+            for err in errs:
+                print(err)
+        else:
+            print(f"Test Passed")
