@@ -3,7 +3,7 @@ import requests
 from datetime import datetime
 
 URL = "https://lucid-6kv9.onrender.com/health"
-INTERVAL = 600  
+INTERVAL = 30  
 
 while True:
     try:

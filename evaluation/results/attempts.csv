@@ -1,0 +1,28 @@
+,prompt_id,attempt_num,outcome,error_code,error_msg,inference_time
+0,136,0,success,,,3.687884417013265
+1,237,0,fail,SQL Semantic,"[ValidationError(type='SQL Semantic', details=""Chart contains column reference not present in Incidents table: {'parent'}"", location='validate_sql_semantic')]",80.14776133408304
+2,237,1,success,,,93.86411025002599
+3,40,0,fail,VisSpec Schema,"[ValidationError(type='VisSpec Schema', details=""Problem with 'informative' (at vis_spec.informative): Value error, An informative layout requires exactly 3 charts: one with role 'primary' and two with role 'supporting'. You provided 2 chart(s) with roles ['primary', 'supporting']. Either add the missing charts, or use layout_mode 'focused' if a single chart answers the question.."", location='validate_spec')]",45.3192694169702
+4,40,1,success,,,21.819366583018564
+5,28,0,success,,,5.51562020892743
+6,26,0,success,,,8.74289791600313
+7,231,0,success,,,27.883050124975853
+8,16,0,fail,VisSpec Schema,"[ValidationError(type='VisSpec Schema', details=""Problem with 'informative' (at vis_spec.informative): Value error, An informative layout requires exactly 3 charts: one with role 'primary' and two with role 'supporting'. You provided 2 chart(s) with roles ['primary', 'supporting']. Either add the missing charts, or use layout_mode 'focused' if a single chart answers the question.."", location='validate_spec')]",50.06225679197814
+9,16,1,success,,,24.91303987498395
+10,27,0,success,,,24.132800583029166
+11,169,0,success,,,25.954954582965
+12,141,0,success,,,23.89968195790425
+13,148,0,success,,,26.63145500002429
+14,15,0,success,,,15.21504579205066
+15,101,0,success,,,21.871424249955453
+16,18,0,success,,,16.87647495791316
+17,50,0,success,,,25.62753875006456
+18,123,0,success,,,21.59080804209225
+19,63,0,success,,,4.150928291026503
+20,124,0,success,,,20.914483209024183
+21,125,0,success,,,25.320845166919753
+22,138,0,success,,,18.902592750033364
+23,98,0,success,,,27.993503500008956
+24,156,0,success,,,20.086083292029798
+25,150,0,success,,,23.888610415975563
+26,245,0,success,,,26.842212957912125

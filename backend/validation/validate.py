@@ -1,7 +1,7 @@
 from backend.validation.component_validation.validate_sql import validate_sql_semantic, validate_sql_syntax
 from backend.schema.introspect import DBSchema
 from backend.errors.validation_error import ValidationError
-from backend.models.spec import validate_spec, UnansweredResponse, ChartSpec, ScalarSpec
+from backend.models.spec import validate_spec, UnansweredResponse, ScalarSpec, FocusedSpec, InformativeSpec
     
 
     
@@ -29,7 +29,7 @@ def evaluate_response(raw_spec:dict, db_schema:DBSchema) -> tuple[bool, list[Val
                 if not ok:
                     return False, err
             
-        if isinstance(vis_spec, ChartSpec):
+        if isinstance(vis_spec, (FocusedSpec, InformativeSpec)):
             for chart in vis_spec.charts:
                 sql = chart.sql
                 ok, err = validate_sql_syntax(sql)

@@ -29,7 +29,7 @@ for idx, row in tqdm(PROMPTS.iterrows(), total=len(PROMPTS), desc="Processing pr
 
     prompt_id = row["prompt_id"]
     try:
-        spec, errors, attempts = generate_validated_spec(row["prompt"], debug=False)
+        spec, attempts = generate_validated_spec(row["prompt"])
     except Exception as e:
         result_rows.append({"prompt_id": prompt_id, "succeeded": False,
                             "success_attempt": None, "crashed": True, "crash_msg": str(e)})
@@ -53,6 +53,9 @@ for idx, row in tqdm(PROMPTS.iterrows(), total=len(PROMPTS), desc="Processing pr
         "n_charts": len(charts),
         "vis_spec": spec,     # keep the clean spec for judge scoring + examples
     })
+
+    if idx == 1:
+        break
 
 attempt_df = pd.DataFrame(attempt_rows)
 result_df = pd.DataFrame(result_rows)

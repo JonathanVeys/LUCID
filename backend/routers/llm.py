@@ -155,6 +155,7 @@ async def handle_query(query: QueryRequest) -> dict:
     #     print(json.dumps(spec, indent=2))
     # except TypeError as e:
     #     print(f"Could not print spec")
+    print(attempts)
     return {"spec": spec, "attempts":attempts}
 
      

@@ -127,11 +127,13 @@ def handle_choropleth_inject(chart:dict, rows:list) -> tuple[dict|None, list[Val
     # print(f"VALUE FIELD: {value_field}")
 
     if granularity == "country":
-        data, errs = handle_countries(chart, rows, value_field)    
+        data, errs = handle_countries(chart, rows, value_field)   
+        if errs:
+            return None, errs 
     elif granularity == "region":
         data, errs = handle_regions(chart, rows, value_field)
-    if errs:
-        return None, errs
+        if errs:
+            return None, errs
 
     vl = chart.get("vega_lite")
     if vl:
@@ -169,25 +171,15 @@ def inject_single_chart(chart:dict, engine:Engine) -> tuple[dict|None, list[Vali
     '''
     
     '''
+    agg_sql = chart.get("sql", "")
+    url_sql = chart.get("url_sql", "")
+    vega_lite = chart.get("vega_lite", {})  
+    
     with engine.connect() as conn:
-        agg_sql = chart.get("sql", "")
-        url_sql = chart.get("url_sql", "")
-        vega_lite = chart.get("vega_lite", {})  
-
         try:
-            url_result = conn.execute(text(url_sql))
-            url_rows = [dict(r._mapping) for r in url_result]
+            url_rows = [dict(r._mapping) for r in conn.execute(text(url_sql))]
+            agg_rows = [dict(r._mapping) for r in conn.execute(text(agg_sql))]
 
-            agg_result = conn.execute(text(agg_sql))
-            agg_rows = [dict(r._mapping) for r in agg_result]
-
-            label_field = chart.get("label_field")
-            url_map = {r[label_field]: (r.get("urls") or []) for r in url_rows}
-
-            rows = []
-            for r in agg_rows:
-                r["urls"] = url_map.get(r[label_field], [])
-                rows.append(r)
         except (exc.ProgrammingError, exc.DataError) as e:
             msg = getattr(getattr(e.orig, "diag", None), "message_primary", None) or str(e.orig)
             err = ValidationError(
@@ -196,25 +188,34 @@ def inject_single_chart(chart:dict, engine:Engine) -> tuple[dict|None, list[Vali
                 location="inject_data"
             )
             return None, [err]
-        
-        if not rows:
-                err = ValidationError(
-                    type="SQL Execution",
-                    details=(f"The following SQL query returned no data from the database. "
-                             f"Possibly too restrictive: {agg_sql}"),
-                    location="inject_data"
-                )
-                return None, [err]
 
-        mark:str = vega_lite.get("mark", {}).get("type")
-        if mark.lower() in ["geoshape"]:
-            injected_chart, errs = handle_choropleth_inject(chart, rows)
-            if errs:
-                return None, errs
-        else:
-            injected_chart, errs = handle_chart_inject(chart, rows)
-            if errs:
-                return None, errs
+    #Create an object that maps each data row label to its urls
+    label_field = chart.get("label_field")
+    url_map = {r[label_field]: (r.get("urls") or []) for r in url_rows}
+
+    #Iterate over the data, using the url map to extract relevant urls
+    rows = []
+    for r in agg_rows:
+        r["urls"] = url_map.get(r[label_field], [])
+        rows.append(r)
+    
+    if not rows:
+            err = ValidationError(
+                type="SQL Execution",
+                details=(f"The following SQL query returned no data from the database. Possibly too restrictive: {agg_sql}"),
+                location="inject_data"
+            )
+            return None, [err]
+
+    mark:str = vega_lite.get("mark", {}).get("type")
+    if mark.lower() in ["geoshape"]:
+        injected_chart, errs = handle_choropleth_inject(chart, rows)
+        if errs:
+            return None, errs
+    else:
+        injected_chart, errs = handle_chart_inject(chart, rows)
+        if errs:
+            return None, errs
     return injected_chart, []
 
 
@@ -255,7 +256,7 @@ def inject_spec(spec:dict, engine:Engine) -> tuple[dict|None, list[ValidationErr
             errors.extend(errs)
             return None, errors
         else: 
-            return spec, []
+            return injected_spec, []
         
     else:
         charts = vis_spec.get("charts")
